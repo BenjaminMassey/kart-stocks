@@ -9,3 +9,4 @@ twitch-irc = "5.0.1"
 nokhwa = { version = "0.10.0",  features = ["input-native"] }
 image = "0.25.6"
 prompted = "0.2.8"
+img_hash = "3.2.0"

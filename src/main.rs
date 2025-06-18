@@ -1,4 +1,5 @@
 mod capture;
+mod extract;
 mod twitch;
 
 fn main() {
@@ -21,20 +22,37 @@ fn main() {
 
     let mut camera: nokhwa::Camera = capture::get_camera(index).expect("Failed to get capture.");
 
-    let mut frame = capture::get_video_frame(&mut camera);
-    let _ = frame.save(&format!("test_full.png"));
+    let hasher = img_hash::HasherConfig::new().to_hasher();
 
-    let place = capture::get_placement_image(&mut frame);
-    let _ = place.save(&format!("test_place.png"));
+    let places = extract::get_hashes(&hasher, "data/place");
+    let firsts = extract::get_hashes(&hasher, "data/first");
+    let seconds = extract::get_hashes(&hasher, "data/second");
 
-    let first_item = capture::get_first_item_image(&mut frame);
-    let _ = first_item.save(&format!("test_first.png"));
 
-    let second_item = capture::get_second_item_image(&mut frame);
-    let _ = second_item.save(&format!("test_second.png"));
+    loop {
+        let mut frame = capture::get_video_frame(&mut camera);
+        //let _ = frame.save(&format!("test_full.png"));
 
-    let coin = capture::get_coin_image(&mut frame);
-    let _ = coin.save(&format!("test_coin.png"));
+        let place_frame = capture::get_placement_image(&mut frame);
+        //let _ = place_frame.save(&format!("test_place.png"));
+        let place = extract::get_closest(&hasher, &place_frame, &places);
+        println!("Placement: {place}");
+
+        let first_item_frame = capture::get_first_item_image(&mut frame);
+        //let _ = first_item_frame.save(&format!("test_first.png"));
+        let first_item = extract::get_closest(&hasher, &first_item_frame, &firsts);
+        println!("First Item: {first_item}");
+
+        let second_item_frame = capture::get_second_item_image(&mut frame);
+        //let _ = second_item_frame.save(&format!("test_second.png"));
+        let second_item = extract::get_closest(&hasher, &second_item_frame, &seconds);
+        println!("Second Item: {second_item}");
+
+        //let coin_frame = capture::get_coin_image(&mut frame);
+        //let _ = coin_frame.save(&format!("test_coin.png"));
+
+        std::thread::sleep(std::time::Duration::from_secs(5));
+    } // TODO: multi-thread this, plus output, plus coins, etc
 
     println!("Test frames saved.");
 
