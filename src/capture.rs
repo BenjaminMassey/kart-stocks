@@ -4,7 +4,28 @@ use nokhwa::{pixel_format::RgbFormat, utils::*, Camera};
 const CAMERA_INDEX_MAX: u32 = 10;
 const CAMERA_RESOLUTION: (u32, u32) = (1280, 720);
 
-pub fn get_list_cameras() -> Vec<Option<String>> {
+pub fn init() -> Camera {
+    let cameras = get_list_cameras();
+    if cameras.is_empty() {
+        panic!("No camera devices found.");
+    }
+    println!("Possible camera devices by index:");
+    for (i, camera) in cameras.iter().enumerate() {
+        if let Some(cam) = camera {
+            println!("\t{}: {}", i, cam);
+        }
+    }
+
+    let index_input = prompted::input!("Index selection: ");
+    let index: u32 = match index_input.trim().parse() {
+        Ok(num) => num,
+        Err(_) => panic!("Invalid index input."),
+    };
+
+    get_camera(index).expect("Failed to get capture.")
+}
+
+fn get_list_cameras() -> Vec<Option<String>> {
     let mut names: Vec<Option<String>> = vec![];
     for i in 0..CAMERA_INDEX_MAX {
         let camera = get_camera(i);
@@ -17,7 +38,7 @@ pub fn get_list_cameras() -> Vec<Option<String>> {
     names
 }
 
-pub fn get_camera(index: u32) -> Option<Camera> {
+fn get_camera(index: u32) -> Option<Camera> {
     let index = CameraIndex::Index(index);
     let requested = RequestedFormat::new::<RgbFormat>(
         RequestedFormatType::HighestResolution(

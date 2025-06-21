@@ -1,47 +1,41 @@
 use std::collections::HashMap;
 
-pub fn get_hashes(
-    hasher: &img_hash::Hasher,
-    folder: &str
-) -> HashMap<String, img_hash::ImageHash> {
-    let mut map: HashMap<String, img_hash::ImageHash> = HashMap::new();
-    let entries = std::fs::read_dir("./".to_owned() + folder).unwrap();
-    for entry in entries {
-        if let Ok(file) = entry {
-            let file_name = file.file_name().into_string().unwrap();
-            let file_path = format!("./{folder}/{file_name}");
-            let frame = image::open(file_path).unwrap();
-            let hash = hasher.hash_image(&hashable_convert(&frame.to_rgb8()));
-            map.insert(file_name, hash);
-        }
-    }
-    map
+pub fn get_placement(
+    hasher: &(img_hash::Hasher, HashMap<String, HashMap<String, img_hash::ImageHash>>),
+    frame: &mut image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
+) -> Option<String> {
+    let place_frame = crate::capture::get_placement_image(frame);
+    //let _ = place_frame.save(&format!("test_place.png"));
+    let place = crate::phash::get_closest(&hasher.0, &place_frame, &hasher.1["places"]);
+    Some(place) // TODO: threshold / status for None
+    // TODO: is OCR better for placement?
 }
 
-pub fn get_closest(
-    hasher: &img_hash::Hasher,
-    frame: &image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
-    possibilities: &HashMap<String, img_hash::ImageHash>,
-) -> String {
-    let the_hash = hasher.hash_image(&hashable_convert(frame));
-    let mut min = (String::new(), u32::MAX);
-    for (key, value) in possibilities.iter() {
-        let dist = the_hash.dist(value);
-        if dist < min.1 {
-            min = (key.clone(), dist);
-        }
-    }
-    min.0
+pub fn get_first_item(
+    hasher: &(img_hash::Hasher, HashMap<String, HashMap<String, img_hash::ImageHash>>),
+    frame: &mut image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
+) -> Option<String> {
+    let first_item_frame = crate::capture::get_first_item_image(frame);
+    //let _ = first_item_frame.save(&format!("test_first.png"));
+    let first_item = crate::phash::get_closest(&hasher.0, &first_item_frame, &hasher.1["firsts"]);
+    Some(first_item) // TODO: threshold / status for None
 }
 
-fn hashable_convert(
-    frame: &image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
-) -> img_hash::image::DynamicImage {
-    img_hash::image::DynamicImage::ImageRgb8(
-        img_hash::image::ImageBuffer::from_raw(
-            frame.width(),
-            frame.height(),
-            frame.as_raw().to_vec()
-        ).unwrap()
-    )
+pub fn get_second_item(
+    hasher: &(img_hash::Hasher, HashMap<String, HashMap<String, img_hash::ImageHash>>),
+    frame: &mut image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
+) -> Option<String> {
+    let second_item_frame = crate::capture::get_second_item_image(frame);
+    //let _ = second_item_frame.save(&format!("test_second.png"));
+    let second_item = crate::phash::get_closest(&hasher.0, &second_item_frame, &hasher.1["seconds"]);
+    Some(second_item) // TODO: threshold / status for None
+}
+
+pub fn get_coin_count(
+    engine: &ocrs::OcrEngine,
+    frame: &mut image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
+) -> Option<String> {
+    let coin_frame = crate::capture::get_coin_image(frame);
+    //let _ = coin_frame.save(&format!("test_coin.png"));
+    crate::ocr::extract_text(&engine, &coin_frame)
 }
