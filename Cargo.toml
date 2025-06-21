@@ -10,3 +10,5 @@ nokhwa = { version = "0.10.0",  features = ["input-native"] }
 image = "0.25.6"
 prompted = "0.2.8"
 img_hash = "3.2.0"
+rten = "0.18.0"
+ocrs = "0.10.3"

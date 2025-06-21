@@ -1,8 +1,11 @@
 mod capture;
 mod extract;
+mod ocr;
 mod twitch;
 
 fn main() {
+    let ocr_engine = ocr::init();
+
     let cameras = capture::get_list_cameras();
     if cameras.is_empty() {
         panic!("No camera devices found.");
@@ -24,10 +27,9 @@ fn main() {
 
     let hasher = img_hash::HasherConfig::new().to_hasher();
 
-    let places = extract::get_hashes(&hasher, "data/place");
-    let firsts = extract::get_hashes(&hasher, "data/first");
-    let seconds = extract::get_hashes(&hasher, "data/second");
-
+    let places = extract::get_hashes(&hasher, "data/images/place");
+    let firsts = extract::get_hashes(&hasher, "data/images/first");
+    let seconds = extract::get_hashes(&hasher, "data/images/second");
 
     loop {
         let mut frame = capture::get_video_frame(&mut camera);
@@ -35,8 +37,10 @@ fn main() {
 
         let place_frame = capture::get_placement_image(&mut frame);
         //let _ = place_frame.save(&format!("test_place.png"));
-        let place = extract::get_closest(&hasher, &place_frame, &places);
-        println!("Placement: {place}");
+        let place_hash = extract::get_closest(&hasher, &place_frame, &places);
+        println!("Placement (hash): {place_hash}");
+        let place_ocrs = ocr::extract_text(&ocr_engine, &place_frame);
+        println!("Placement (ocrs): {place_ocrs:?}");
 
         let first_item_frame = capture::get_first_item_image(&mut frame);
         //let _ = first_item_frame.save(&format!("test_first.png"));
@@ -48,10 +52,13 @@ fn main() {
         let second_item = extract::get_closest(&hasher, &second_item_frame, &seconds);
         println!("Second Item: {second_item}");
 
-        //let coin_frame = capture::get_coin_image(&mut frame);
+        let coin_frame = capture::get_coin_image(&mut frame);
         //let _ = coin_frame.save(&format!("test_coin.png"));
+        let coin_count = ocr::extract_text(&ocr_engine, &coin_frame);
+        println!("Coin Count: {coin_count:?}");
 
-        std::thread::sleep(std::time::Duration::from_secs(5));
+        std::thread::sleep(std::time::Duration::from_secs(5)); // real looping
+        //let _ = prompted::input!("NEXT"); // manual testing
     } // TODO: multi-thread this, plus output, plus coins, etc
 
     println!("Test frames saved.");

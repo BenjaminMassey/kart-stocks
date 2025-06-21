@@ -1,0 +1,1 @@
+Please see the `OCRS` [crate](https://crates.io/crates/ocrs) or [GitHub repo](https://github.com/robertknight/ocrs) for how to get `text-detection.rten` and `text-recognition.rten` files. During development, I used their provided [`download-models.sh`](https://github.com/robertknight/ocrs/blob/main/ocrs/examples/download-models.sh) script to receive mine.
