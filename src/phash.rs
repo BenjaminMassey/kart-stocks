@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+const THRESHOLD: u32 = 22;
+
 pub fn init() -> (img_hash::Hasher, HashMap<String, HashMap<String, img_hash::ImageHash>>) {
     let hasher = img_hash::HasherConfig::new().to_hasher();
     
@@ -23,7 +25,7 @@ fn get_hashes(
             let file_path = format!("./{folder}/{file_name}");
             let frame = image::open(file_path).unwrap();
             let hash = hasher.hash_image(&hashable_convert(&frame.to_rgb8()));
-            map.insert(file_name, hash);
+            map.insert(file_name[..file_name.len()-4].to_owned(), hash);
         }
     }
     map
@@ -33,7 +35,7 @@ pub fn get_closest(
     hasher: &img_hash::Hasher,
     frame: &image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
     possibilities: &HashMap<String, img_hash::ImageHash>,
-) -> String {
+) -> Option<String> {
     let the_hash = hasher.hash_image(&hashable_convert(frame));
     let mut min = (String::new(), u32::MAX);
     for (key, value) in possibilities.iter() {
@@ -42,7 +44,10 @@ pub fn get_closest(
             min = (key.clone(), dist);
         }
     }
-    min.0
+    if min.1 >= THRESHOLD {
+        return None;
+    }
+    Some(min.0)
 }
 
 fn hashable_convert(
