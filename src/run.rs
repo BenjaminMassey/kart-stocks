@@ -1,5 +1,19 @@
 use std::collections::HashMap;
 
+pub fn from_obs(
+    password: &str,
+    source: uuid::Uuid,
+    state: &mut crate::data::State,
+    hasher: &(
+        img_hash::Hasher,
+        HashMap<String, HashMap<String, img_hash::ImageHash>>,
+    ),
+    ocr_engine: &ocrs::OcrEngine,
+) {
+    let mut frame = crate::obs::get_obs_frame(password, source);
+    update_state(&mut frame, state, hasher, ocr_engine);
+}
+
 pub fn from_camera(
     camera: &mut nokhwa::Camera,
     state: &mut crate::data::State,

@@ -4,11 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1.45.1", features = [ "rt-multi-thread" ] }
+base64 = "0.22.1"
+image = "0.25.6"
+img_hash = "3.2.0"
+tokio = { version = "1.45.1", features = [ "rt", "rt-multi-thread" ] }
 twitch-irc = "5.0.1"
 nokhwa = { version = "0.10.0",  features = ["input-native"] }
-image = "0.25.6"
-prompted = "0.2.8"
-img_hash = "3.2.0"
-rten = "0.18.0"
+obws = "0.15.0"
 ocrs = "0.10.3"
+prompted = "0.2.8"
+rten = "0.18.0"
+uuid = "1.23.1"
