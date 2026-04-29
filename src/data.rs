@@ -16,12 +16,14 @@ impl State {
     }
 }
 
-pub fn option_str_to_option_u32(input: Option<String>) -> Option<u32> {
-    if let Some(str) = input {
-        let input = str.parse::<u32>();
-        if let Ok(int) = input {
-            return Some(int);
-        }
+pub fn string_to_number(input: &str) -> Option<u32> {
+    let filtered: String = input.chars().filter(|c| c.is_ascii_digit()).collect();
+    let parsed = filtered.parse::<u32>();
+    if let Ok(number) = parsed {
+        return Some(number);
     }
     None
 }
+
+
+

@@ -2,3 +2,8 @@
 test*.png
 /data/ocr_models/*.rten
 obws_password.txt
+
+/llama-model/*.gguf
+/llama-cpp
+/deployments
+llamacpp_log.txt

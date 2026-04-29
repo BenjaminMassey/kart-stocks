@@ -1,13 +1,18 @@
-use image::GenericImage;
-use std::collections::HashMap;
+use image::{GenericImage, ImageFormat};
 
 const CAMERA_RESOLUTION: (u32, u32) = (1280, 720);
 
+fn image_to_bytes(frame: &image::ImageBuffer<image::Rgb<u8>, Vec<u8>>) -> Vec<u8> {
+    let mut bytes = Vec::new();
+    let _ = frame
+        .write_to(&mut std::io::Cursor::new(&mut bytes), ImageFormat::Jpeg)
+        .unwrap();
+    bytes
+}
+
 pub fn get_placement(
-    hasher: &(
-        img_hash::Hasher,
-        HashMap<String, HashMap<String, img_hash::ImageHash>>,
-    ),
+    llm_model: &mut llamacpp_embed::LlamaEmbedModel,
+    llm_training_data: &[llamacpp_embed::VisionMessage],
     frame: &mut image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
 ) -> Option<u32> {
     let place_frame = frame
@@ -19,15 +24,18 @@ pub fn get_placement(
         )
         .to_image();
     //let _ = place_frame.save(&format!("test_place.png"));
-    let place = crate::phash::get_closest(&hasher.0, &place_frame, &hasher.1["places"]);
-    crate::data::option_str_to_option_u32(place)
+    let place = crate::llm::identify(
+        llm_model,
+        &crate::llm::placement_prompt(),
+        &image_to_bytes(&place_frame),
+        llm_training_data,
+    );
+    crate::data::string_to_number(&place)
 }
 
 pub fn get_first_item(
-    hasher: &(
-        img_hash::Hasher,
-        HashMap<String, HashMap<String, img_hash::ImageHash>>,
-    ),
+    llm_model: &mut llamacpp_embed::LlamaEmbedModel,
+    llm_training_data: &[llamacpp_embed::VisionMessage],
     frame: &mut image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
 ) -> Option<String> {
     let first_item_frame = frame
@@ -39,14 +47,17 @@ pub fn get_first_item(
         )
         .to_image();
     //let _ = first_item_frame.save(&format!("test_first.png"));
-    crate::phash::get_closest(&hasher.0, &first_item_frame, &hasher.1["firsts"])
+    Some(crate::llm::identify(
+        llm_model,
+        &crate::llm::item_prompt(),
+        &image_to_bytes(&first_item_frame),
+        llm_training_data,
+    ))
 }
 
 pub fn get_second_item(
-    hasher: &(
-        img_hash::Hasher,
-        HashMap<String, HashMap<String, img_hash::ImageHash>>,
-    ),
+    llm_model: &mut llamacpp_embed::LlamaEmbedModel,
+    llm_training_data: &[llamacpp_embed::VisionMessage],
     frame: &mut image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
 ) -> Option<String> {
     let second_item_frame = frame
@@ -58,7 +69,12 @@ pub fn get_second_item(
         )
         .to_image();
     //let _ = second_item_frame.save(&format!("test_second.png"));
-    crate::phash::get_closest(&hasher.0, &second_item_frame, &hasher.1["seconds"])
+    Some(crate::llm::identify(
+        llm_model,
+        &crate::llm::item_prompt(),
+        &image_to_bytes(&second_item_frame),
+        llm_training_data,
+    ))
 }
 
 pub fn get_coin_count(
@@ -74,6 +90,6 @@ pub fn get_coin_count(
         )
         .to_image();
     //let _ = coin_frame.save(&format!("test_coin.png"));
-    let coins = crate::ocr::extract_text(&engine, &coin_frame);
-    crate::data::option_str_to_option_u32(coins)
+    let coins = crate::ocr::extract_text(&engine, &coin_frame)?;
+    crate::data::string_to_number(&coins)
 }
