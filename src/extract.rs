@@ -1,4 +1,7 @@
+use image::GenericImage;
 use std::collections::HashMap;
+
+const CAMERA_RESOLUTION: (u32, u32) = (1280, 720);
 
 pub fn get_placement(
     hasher: &(
@@ -7,7 +10,14 @@ pub fn get_placement(
     ),
     frame: &mut image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
 ) -> Option<u32> {
-    let place_frame = crate::capture::get_placement_image(frame);
+    let place_frame = frame
+        .sub_image(
+            (0.8368f32 * (CAMERA_RESOLUTION.0 as f32)) as u32,
+            (0.7791f32 * (CAMERA_RESOLUTION.1 as f32)) as u32,
+            (0.1289f32 * (CAMERA_RESOLUTION.0 as f32)) as u32,
+            (0.1944f32 * (CAMERA_RESOLUTION.1 as f32)) as u32,
+        )
+        .to_image();
     //let _ = place_frame.save(&format!("test_place.png"));
     let place = crate::phash::get_closest(&hasher.0, &place_frame, &hasher.1["places"]);
     crate::data::option_str_to_option_u32(place)
@@ -20,7 +30,14 @@ pub fn get_first_item(
     ),
     frame: &mut image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
 ) -> Option<String> {
-    let first_item_frame = crate::capture::get_first_item_image(frame);
+    let first_item_frame = frame
+        .sub_image(
+            (0.8368f32 * (CAMERA_RESOLUTION.0 as f32)) as u32,
+            (0.7791f32 * (CAMERA_RESOLUTION.1 as f32)) as u32,
+            (0.1289f32 * (CAMERA_RESOLUTION.0 as f32)) as u32,
+            (0.1944f32 * (CAMERA_RESOLUTION.1 as f32)) as u32,
+        )
+        .to_image();
     //let _ = first_item_frame.save(&format!("test_first.png"));
     crate::phash::get_closest(&hasher.0, &first_item_frame, &hasher.1["firsts"])
 }
@@ -32,7 +49,14 @@ pub fn get_second_item(
     ),
     frame: &mut image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
 ) -> Option<String> {
-    let second_item_frame = crate::capture::get_second_item_image(frame);
+    let second_item_frame = frame
+        .sub_image(
+            (0.0273f32 * (CAMERA_RESOLUTION.0 as f32)) as u32,
+            (0.0472f32 * (CAMERA_RESOLUTION.1 as f32)) as u32,
+            (0.0540f32 * (CAMERA_RESOLUTION.0 as f32)) as u32,
+            (0.0958f32 * (CAMERA_RESOLUTION.1 as f32)) as u32,
+        )
+        .to_image();
     //let _ = second_item_frame.save(&format!("test_second.png"));
     crate::phash::get_closest(&hasher.0, &second_item_frame, &hasher.1["seconds"])
 }
@@ -41,9 +65,15 @@ pub fn get_coin_count(
     engine: &ocrs::OcrEngine,
     frame: &mut image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
 ) -> Option<u32> {
-    let coin_frame = crate::capture::get_coin_image(frame);
+    let coin_frame = frame
+        .sub_image(
+            (0.0601f32 * (CAMERA_RESOLUTION.0 as f32)) as u32,
+            (0.9028f32 * (CAMERA_RESOLUTION.1 as f32)) as u32,
+            (0.0414f32 * (CAMERA_RESOLUTION.0 as f32)) as u32,
+            (0.0514f32 * (CAMERA_RESOLUTION.1 as f32)) as u32,
+        )
+        .to_image();
     //let _ = coin_frame.save(&format!("test_coin.png"));
     let coins = crate::ocr::extract_text(&engine, &coin_frame);
     crate::data::option_str_to_option_u32(coins)
 }
-

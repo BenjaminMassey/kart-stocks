@@ -1,4 +1,3 @@
-mod capture;
 mod data;
 mod extract;
 mod obs;
@@ -11,7 +10,6 @@ fn main() {
     // Initializations
     let ocr_engine = ocr::init();
     let hasher = phash::init();
-    //let mut camera: nokhwa::Camera = capture::init();
     let obws_password = obs::get_obws_password();
     let obws_source = obs::choose_obs_source(&obws_password);
 
@@ -25,7 +23,6 @@ fn main() {
             &hasher,
             &ocr_engine,
         );
-        //run::from_camera(&mut camera, &mut state, &hasher, &ocr_engine);
         println!("State:\n\t{state:?}");
         std::thread::sleep(std::time::Duration::from_secs(5));
         //let _ = prompted::input!("NEXT"); // manual testing
