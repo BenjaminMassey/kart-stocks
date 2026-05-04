@@ -40,10 +40,10 @@ pub fn get_first_item(
 ) -> Option<String> {
     let first_item_frame = frame
         .sub_image(
-            (0.8368f32 * (CAMERA_RESOLUTION.0 as f32)) as u32,
-            (0.7791f32 * (CAMERA_RESOLUTION.1 as f32)) as u32,
-            (0.1289f32 * (CAMERA_RESOLUTION.0 as f32)) as u32,
-            (0.1944f32 * (CAMERA_RESOLUTION.1 as f32)) as u32,
+            (0.0906f32 * (CAMERA_RESOLUTION.0 as f32)) as u32,
+            (0.0458f32 * (CAMERA_RESOLUTION.1 as f32)) as u32,
+            (0.0977f32 * (CAMERA_RESOLUTION.0 as f32)) as u32,
+            (0.1708f32 * (CAMERA_RESOLUTION.1 as f32)) as u32,
         )
         .to_image();
     //let _ = first_item_frame.save(&format!("test_first.png"));
