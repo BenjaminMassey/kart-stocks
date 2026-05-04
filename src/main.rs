@@ -10,7 +10,8 @@ fn main() {
     // Initializations
     let ocr_engine = ocr::init();
     let mut llm_model = llm::init();
-    let llm_training_data = llm::get_training_data();
+    let llm_placement_data = llm::get_placement_data();
+    let llm_item_data = llm::get_item_data();
     let obws_password = obs::get_obws_password();
     let obws_source = obs::choose_obs_source(&obws_password);
 
@@ -22,7 +23,8 @@ fn main() {
             obws_source,
             &mut state,
             &mut llm_model,
-            &llm_training_data,
+            &llm_placement_data,
+            &llm_item_data,
             &ocr_engine,
         );
         println!("State:\n\t{state:?}");
@@ -43,7 +45,8 @@ mod tests {
         let ocr_engine = ocr::init();
         println!("Initializing LLM...");
         let mut llm_model = llm::init();
-        let llm_training_data = llm::get_training_data();
+        let llm_placement_data = llm::get_placement_data();
+        let llm_item_data = llm::get_item_data();
         println!("Done initializing.");
         for item in std::fs::read_dir("./test/images/").unwrap() {
             if let Ok(file) = item {
@@ -58,13 +61,14 @@ mod tests {
                     path.to_str().unwrap(),
                     &mut state,
                     &mut llm_model,
-                    &llm_training_data,
+                    &llm_placement_data,
+                    &llm_item_data,
                     &ocr_engine,
                 );
                 let coins: u32 = name_pieces[0].parse().unwrap();
                 let placement: u32 = name_pieces[1].parse().unwrap();
-                let first_item: String = name_pieces[2].clone();
-                let second_item: String = name_pieces[3].clone();
+                let first_item: String = name_pieces[2].trim().to_owned();
+                let second_item: String = name_pieces[3].trim().trim_end_matches(".png").to_owned();
                 correct[0] = state.coin_count == coins;
                 correct[1] = state.place == placement;
                 if let Some(item) = state.first_item.clone() {
@@ -73,10 +77,9 @@ mod tests {
                     correct[2] = "none" == &first_item;
                 }
                 if let Some(item) = state.second_item.clone() {
-                    let fixed_item = item.split(".").collect::<Vec<&str>>()[0];
-                    correct[3] = fixed_item == &second_item;
+                    correct[3] = item == second_item;
                 } else {
-                    correct[3] = "none.png" == &second_item;
+                    correct[3] = "none" == &second_item;
                 }
                 println!(
                     "\tCoins: {} ({})\n\tPlace: {} ({})\n\tItem1: {} ({:?})\n\tItem2: {} ({:?})\n",
