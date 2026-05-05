@@ -6,11 +6,10 @@ mod ocr;
 mod run;
 mod twitch;
 
-const CYCLE_TIME: u64 = 5;
+use std::sync::{Arc, Mutex};
 
 fn main() {
     println!("Starting kart-stocks...");
-    // Initializations
     let ocr_engine = ocr::init();
     let mut llm_model = llm::init();
     let llm_placement_data = llm::get_placement_data();
@@ -20,27 +19,25 @@ fn main() {
     let obws_source = obs::choose_obs_source(&obws_password);
     println!("\nSetup complete: doing initial prompting, followed by runs.\n");
 
-    // Capture and state-parsing
-    let mut state = data::State::new();
-    loop {
-        run::from_obs(
+    let state = Arc::new(Mutex::new(data::State::new()));
+
+    let state_for_updates = Arc::clone(&state);
+    let state_thread = std::thread::spawn(move || {
+        run::state_loop(
             &obws_password,
             obws_source,
-            &mut state,
+            state_for_updates,
             &mut llm_model,
             &llm_placement_data,
             &llm_item_data,
             &ocr_engine,
         );
-        let value = state.value();
-        println!("{state:?} => {value}");
+    });
 
-        std::thread::sleep(std::time::Duration::from_secs(
-            0i32.max(CYCLE_TIME as i32 - state.time.elapsed().as_secs() as i32) as u64,
-        ));
-    } // TODO: multi-thread this with twitch::run()
+    let state_for_twitch = Arc::clone(&state);
+    twitch::run(state_for_twitch);
 
-    //llamacpp_embed::stop(&mut llm_model).unwrap();
+    let _ = state_thread.join();
 }
 
 #[cfg(test)]
@@ -49,6 +46,8 @@ mod tests {
 
     #[test]
     fn images_directory() {
+        println!("Starting test run...");
+        let state = Arc::new(Mutex::new(data::State::new()));
         println!("Initializing OCR engine...");
         let ocr_engine = ocr::init();
         println!("Initializing LLM...");
@@ -64,10 +63,9 @@ mod tests {
                 let name_pieces: Vec<String> = name.split("_").map(|s| s.to_owned()).collect();
                 assert_eq!(name_pieces.len(), 4);
                 let path = file.path();
-                let mut state = data::State::new();
                 run::from_image(
                     path.to_str().unwrap(),
-                    &mut state,
+                    state.clone(),
                     &mut llm_model,
                     &llm_placement_data,
                     &llm_item_data,
@@ -77,23 +75,24 @@ mod tests {
                 let placement: u32 = name_pieces[1].parse().unwrap();
                 let first_item: String = name_pieces[2].trim().to_owned();
                 let second_item: String = name_pieces[3].trim().trim_end_matches(".png").to_owned();
-                correct[0] = state.coin_count == coins;
-                correct[1] = state.place == placement;
-                correct[2] = state.first_item == first_item;
-                correct[3] = state.second_item == second_item;
+                let s = state.lock().unwrap();
+                correct[0] = s.coin_count == coins;
+                correct[1] = s.place == placement;
+                correct[2] = s.first_item == first_item;
+                correct[3] = s.second_item == second_item;
                 println!(
                     "\tCoins: {} ({})\n\tPlace: {} ({})\n\tItem1: {} ({:?})\n\tItem2: {} ({:?})\n",
                     correct[0],
-                    state.coin_count,
+                    s.coin_count,
                     correct[1],
-                    state.place,
+                    s.place,
                     correct[2],
-                    state.first_item,
+                    s.first_item,
                     correct[3],
-                    state.second_item,
+                    s.second_item,
                 )
             }
         }
         llamacpp_embed::stop(&mut llm_model).unwrap();
-    } // TODO: replce correct area with asserts and remove prints
+    }
 }

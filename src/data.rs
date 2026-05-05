@@ -39,25 +39,29 @@ pub fn valid_item(item: &str) -> bool {
 }
 
 pub struct State {
+    pub running: bool,
     pub time: std::time::Instant,
     pub place: u32,
     pub first_item: String,
     pub second_item: String,
     pub coin_count: u32,
+    pub value: i32,
 }
 impl State {
     pub fn new() -> Self {
         Self {
+            running: true,
             time: std::time::Instant::now(),
             place: 24,
             first_item: "none".to_owned(),
             second_item: "none".to_owned(),
             coin_count: 0,
+            value: 0,
         }
     }
 
-    pub fn value(&mut self) -> i32 {
-        (((((24 - self.place) as f32 / 23.0) * PLACEMENT_COEFFICIENT)
+    pub fn update_value(&mut self) {
+        self.value = (((((24 - self.place) as f32 / 23.0) * PLACEMENT_COEFFICIENT)
             + ((ITEM_VALUES[&self.first_item] as f32 / 100.0) * ITEM_COEFFICIENT)
             + ((ITEM_VALUES[&self.second_item] as f32 / 100.0) * ITEM_COEFFICIENT)
             + (((20 - self.coin_count) as f32 / 19.0) * COIN_COEFFICIENT))
@@ -69,8 +73,8 @@ impl std::fmt::Debug for State {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "[{}, {}¢, {}, {}]",
-            self.place, self.coin_count, self.first_item, self.second_item
+            "[{}, {}¢, {}, {}] -> {}",
+            self.place, self.coin_count, self.first_item, self.second_item, self.value
         )
     }
 }
