@@ -6,6 +6,8 @@ pub fn init() -> llamacpp_embed::LlamaEmbedModel {
         60,
         None,
         None,
+        Some(2),
+        Some(8192),
     )
     .unwrap()
 }
@@ -65,6 +67,7 @@ pub fn identify(
     prompt: &str,
     image_bytes: &[u8],
     training_data: &[llamacpp_embed::VisionMessage],
+    id_slot: u64,
 ) -> String {
     clean_response(
         &llamacpp_embed::chat_with_image_bytes(
@@ -73,6 +76,7 @@ pub fn identify(
             image_bytes,
             "image/jpeg",
             Some(training_data),
+            Some(id_slot),
         )
         .unwrap()
         .response,

@@ -1,3 +1,6 @@
+pub const PLACEMENT_SLOT: u64 = 0;
+pub const ITEMS_SLOT: u64 = 1;
+
 #[derive(Debug)]
 pub struct State {
     pub place: u32,

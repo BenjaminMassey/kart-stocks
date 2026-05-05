@@ -29,6 +29,7 @@ pub fn get_placement(
         &crate::llm::placement_prompt(),
         &image_to_bytes(&place_frame),
         llm_training_data,
+        crate::data::PLACEMENT_SLOT,
     );
     crate::data::string_to_number(&place)
 }
@@ -52,6 +53,7 @@ pub fn get_first_item(
         &crate::llm::item_prompt(),
         &image_to_bytes(&first_item_frame),
         llm_training_data,
+        crate::data::ITEMS_SLOT,
     )
 }
 
@@ -74,6 +76,7 @@ pub fn get_second_item(
         &crate::llm::item_prompt(),
         &image_to_bytes(&second_item_frame),
         llm_training_data,
+        crate::data::ITEMS_SLOT,
     )
 }
 
