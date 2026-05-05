@@ -28,6 +28,8 @@ fn main() {
             &ocr_engine,
         );
         println!("State:\n\t{state:?}");
+        println!("\n\n\t===>\n");
+        println!("Value:\n\t{}\n\n=============\n\n", state.value());
         //let _ = prompted::input!("NEXT"); // manual testing
     } // TODO: multi-thread this with twitch::run()
 

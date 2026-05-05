@@ -49,8 +49,14 @@ fn update_state(
     if let Some(new_place) = crate::extract::get_placement(llm_model, llm_placement_data, frame) {
         state.place = new_place;
     }
-    state.first_item = crate::extract::get_first_item(llm_model, llm_item_data, frame);
-    state.second_item = crate::extract::get_second_item(llm_model, llm_item_data, frame);
+    let new_first_item = crate::extract::get_first_item(llm_model, llm_item_data, frame);
+    if crate::data::valid_item(&new_first_item) {
+        state.first_item = new_first_item;
+    }
+    let new_second_item = crate::extract::get_second_item(llm_model, llm_item_data, frame);
+    if crate::data::valid_item(&new_second_item) {
+        state.second_item = new_second_item;
+    }
     if let Some(new_coins) = crate::extract::get_coin_count(ocr_engine, frame) {
         state.coin_count = new_coins;
     }

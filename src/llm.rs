@@ -1,6 +1,6 @@
 pub fn init() -> llamacpp_embed::LlamaEmbedModel {
     llamacpp_embed::LlamaEmbedBuilder::new("./llama-model/model.gguf")
-        .with_mmproj("./llama-model/model.gguf")
+        .with_mmproj("./llama-model/mmproj.gguf")
         .with_system_prompt("You are an image identifying robot.")
         .with_parallel(2)
         .with_context_size(8192)
