@@ -1,15 +1,11 @@
 pub fn init() -> llamacpp_embed::LlamaEmbedModel {
-    llamacpp_embed::start(
-        "./llama-model/model.gguf",
-        Some("./llama-model/mmproj.gguf"),
-        "You are an image identification robot.",
-        60,
-        None,
-        None,
-        Some(2),
-        Some(8192),
-    )
-    .unwrap()
+    llamacpp_embed::LlamaEmbedBuilder::new("./llama-model/model.gguf")
+        .with_mmproj("./llama-model/model.gguf")
+        .with_system_prompt("You are an image identifying robot.")
+        .with_parallel(2)
+        .with_context_size(8192)
+        .build()
+        .unwrap()
 }
 
 pub fn get_placement_data() -> Vec<llamacpp_embed::VisionMessage> {
