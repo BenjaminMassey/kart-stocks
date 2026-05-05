@@ -38,8 +38,8 @@ pub fn valid_item(item: &str) -> bool {
     ITEM_VALUES.contains_key(item)
 }
 
-#[derive(Debug)]
 pub struct State {
+    pub time: std::time::Instant,
     pub place: u32,
     pub first_item: String,
     pub second_item: String,
@@ -48,6 +48,7 @@ pub struct State {
 impl State {
     pub fn new() -> Self {
         Self {
+            time: std::time::Instant::now(),
             place: 24,
             first_item: "none".to_owned(),
             second_item: "none".to_owned(),
@@ -62,6 +63,15 @@ impl State {
             + (((20 - self.coin_count) as f32 / 19.0) * COIN_COEFFICIENT))
             * TOTAL_MULT)
             .ceil() as i32
+    }
+}
+impl std::fmt::Debug for State {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "[{}, {}¢, {}, {}]",
+            self.place, self.coin_count, self.first_item, self.second_item
+        )
     }
 }
 

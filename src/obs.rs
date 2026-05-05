@@ -15,11 +15,13 @@ pub fn get_obws_password() -> String {
 
 pub fn choose_obs_source(password: &str) -> uuid::Uuid {
     let sources: Vec<(uuid::Uuid, String)> = get_obs_sources(password);
-    println!("Here are your obs source options:");
+    println!("Here are your options:");
     for (i, (_uuid, name)) in sources.iter().enumerate() {
-        println!("{}: \"{}\"", i, name);
+        println!("  {}: \"{}\"", i, name);
     }
-    let choice = prompted::input!("Index: ").parse::<usize>().unwrap();
+    let choice = prompted::input!("\nSource index: ")
+        .parse::<usize>()
+        .unwrap();
     sources[choice].0
 }
 

@@ -45,6 +45,7 @@ fn update_state(
     llm_item_data: &[llamacpp_embed::VisionMessage],
     ocr_engine: &ocrs::OcrEngine,
 ) {
+    state.time = std::time::Instant::now();
     //let _ = frame.save(&format!("test_full.png"));
     if let Some(new_place) = crate::extract::get_placement(llm_model, llm_placement_data, frame) {
         state.place = new_place;

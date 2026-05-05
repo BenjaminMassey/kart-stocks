@@ -6,14 +6,19 @@ mod ocr;
 mod run;
 mod twitch;
 
+const CYCLE_TIME: u64 = 5;
+
 fn main() {
+    println!("Starting kart-stocks...");
     // Initializations
     let ocr_engine = ocr::init();
     let mut llm_model = llm::init();
     let llm_placement_data = llm::get_placement_data();
     let llm_item_data = llm::get_item_data();
     let obws_password = obs::get_obws_password();
+    println!("\nFinished initializing!\n\nPlease choose your OBS source.\n");
     let obws_source = obs::choose_obs_source(&obws_password);
+    println!("\nSetup complete: doing initial prompting, followed by runs.\n");
 
     // Capture and state-parsing
     let mut state = data::State::new();
@@ -27,10 +32,12 @@ fn main() {
             &llm_item_data,
             &ocr_engine,
         );
-        println!("State:\n\t{state:?}");
-        println!("\n\n\t===>\n");
-        println!("Value:\n\t{}\n\n=============\n\n", state.value());
-        //let _ = prompted::input!("NEXT"); // manual testing
+        let value = state.value();
+        println!("{state:?} => {value}");
+
+        std::thread::sleep(std::time::Duration::from_secs(
+            0i32.max(CYCLE_TIME as i32 - state.time.elapsed().as_secs() as i32) as u64,
+        ));
     } // TODO: multi-thread this with twitch::run()
 
     //llamacpp_embed::stop(&mut llm_model).unwrap();
