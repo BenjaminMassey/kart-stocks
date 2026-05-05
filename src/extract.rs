@@ -37,7 +37,7 @@ pub fn get_first_item(
     llm_model: &mut llamacpp_embed::LlamaEmbedModel,
     llm_training_data: &[llamacpp_embed::VisionMessage],
     frame: &mut image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
-) -> Option<String> {
+) -> String {
     let first_item_frame = frame
         .sub_image(
             (0.0906f32 * (CAMERA_RESOLUTION.0 as f32)) as u32,
@@ -47,19 +47,19 @@ pub fn get_first_item(
         )
         .to_image();
     //let _ = first_item_frame.save(&format!("test_first.png"));
-    Some(crate::llm::identify(
+    crate::llm::identify(
         llm_model,
         &crate::llm::item_prompt(),
         &image_to_bytes(&first_item_frame),
         llm_training_data,
-    ))
+    )
 }
 
 pub fn get_second_item(
     llm_model: &mut llamacpp_embed::LlamaEmbedModel,
     llm_training_data: &[llamacpp_embed::VisionMessage],
     frame: &mut image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
-) -> Option<String> {
+) -> String {
     let second_item_frame = frame
         .sub_image(
             (0.0273f32 * (CAMERA_RESOLUTION.0 as f32)) as u32,
@@ -69,12 +69,12 @@ pub fn get_second_item(
         )
         .to_image();
     //let _ = second_item_frame.save(&format!("test_second.png"));
-    Some(crate::llm::identify(
+    crate::llm::identify(
         llm_model,
         &crate::llm::item_prompt(),
         &image_to_bytes(&second_item_frame),
         llm_training_data,
-    ))
+    )
 }
 
 pub fn get_coin_count(

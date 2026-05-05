@@ -4,7 +4,8 @@ pub fn init() -> llamacpp_embed::LlamaEmbedModel {
         Some("./llama-model/mmproj.gguf"),
         "You are an image identification robot.",
         60,
-        Some(0),
+        None,
+        None,
     )
     .unwrap()
 }
@@ -65,13 +66,25 @@ pub fn identify(
     image_bytes: &[u8],
     training_data: &[llamacpp_embed::VisionMessage],
 ) -> String {
-    llamacpp_embed::chat_with_image_bytes(
-        model,
-        prompt,
-        image_bytes,
-        "image/jpeg",
-        Some(training_data),
+    clean_response(
+        &llamacpp_embed::chat_with_image_bytes(
+            model,
+            prompt,
+            image_bytes,
+            "image/jpeg",
+            Some(training_data),
+        )
+        .unwrap()
+        .response,
     )
-    .unwrap()
-    .response
-} // TODO: some parsing after response
+}
+
+fn clean_response(response: &str) -> String {
+    response
+        .trim()
+        .replace("\n", "")
+        .replace(" ", "-")
+        .replace("_", "-")
+        .replace("/", "")
+        .replace("</think>", "")
+}

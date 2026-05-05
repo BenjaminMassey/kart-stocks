@@ -28,7 +28,6 @@ fn main() {
             &ocr_engine,
         );
         println!("State:\n\t{state:?}");
-        std::thread::sleep(std::time::Duration::from_secs(5));
         //let _ = prompted::input!("NEXT"); // manual testing
     } // TODO: multi-thread this with twitch::run()
 
@@ -71,16 +70,8 @@ mod tests {
                 let second_item: String = name_pieces[3].trim().trim_end_matches(".png").to_owned();
                 correct[0] = state.coin_count == coins;
                 correct[1] = state.place == placement;
-                if let Some(item) = state.first_item.clone() {
-                    correct[2] = item == first_item;
-                } else {
-                    correct[2] = "none" == &first_item;
-                }
-                if let Some(item) = state.second_item.clone() {
-                    correct[3] = item == second_item;
-                } else {
-                    correct[3] = "none" == &second_item;
-                }
+                correct[2] = state.first_item == first_item;
+                correct[3] = state.second_item == second_item;
                 println!(
                     "\tCoins: {} ({})\n\tPlace: {} ({})\n\tItem1: {} ({:?})\n\tItem2: {} ({:?})\n",
                     correct[0],
@@ -88,9 +79,9 @@ mod tests {
                     correct[1],
                     state.place,
                     correct[2],
-                    state.first_item.as_ref(),
+                    state.first_item,
                     correct[3],
-                    state.second_item.as_ref(),
+                    state.second_item,
                 )
             }
         }
