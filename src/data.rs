@@ -1,23 +1,33 @@
 pub const PLACEMENT_SLOT: u64 = 0;
 pub const ITEMS_SLOT: u64 = 1;
 
-const PLACEMENT_COEFFICIENT: f32 = 1.0;
-const ITEM_COEFFICIENT: f32 = 1.0;
-const COIN_COEFFICIENT: f32 = 1.0;
-const TOTAL_MULT: f32 = 15.0;
+// TODO: time of race should matter
+const BASE_PRICE: f32 = 20.0;
+const ITEM_COEFFICIENT: f32 = 30.0;
+const COIN_COEFFICIENT: f32 = 15.0;
+const PLACEMENT_COEFFICIENT: f32 = 100.0;
+const TIME_COEFFICIENT: f32 = 1.0;
+const TOTAL_MULT: f32 = 1.0;
 static ITEM_VALUES: phf::Map<&'static str, i32> = phf::phf_map! {
     "none" => 0,
     "blooper" => 1,
-    "feather" => 2,
+    "blue-shell" => 2,
     "coin" => 5,
     "coin-block" => 5,
     "boomerang" => 5,
+    "hammers" => 5,
+    "kamek" => 10,
+    "ice-flower" => 10,
+    "fire-flower" => 10,
+    "coin-shell" => 15,
     "banana" => 15,
-    "bombomb" => 15,
     "green-shell" => 15,
+    "feather" => 20,
     "horn" => 20,
-    "lightning" => 20,
+    "bombomb" => 20,
+    "food" => 20,
     "red-shell" => 20,
+    "lightning" => 30,
     "double-banana" => 35,
     "double-green-shell" => 35,
     "double-red-shell" => 40,
@@ -25,19 +35,18 @@ static ITEM_VALUES: phf::Map<&'static str, i32> = phf::phf_map! {
     "triple-banana" => 45,
     "triple-green-shell" => 45,
     "triple-red-shell" => 50,
-    "double-mushroom" => 70,
-    "triple-mushroom" => 80,
-    "boo" => 90,
-    "golden-mushroom" => 90,
+    "double-mushroom" => 55,
+    "triple-mushroom" => 70,
+    "golden-mushroom" => 85,
+    "mega-mushroom" => 90,
+    "boo" => 95,
     "star" => 95,
-    "mega-mushroom" => 100,
     "bullet-bill" => 100,
 }; // should remain range from 0 through 100
 
 pub fn valid_item(item: &str) -> bool {
     ITEM_VALUES.contains_key(item)
 }
-
 #[derive(Clone)]
 pub struct State {
     pub running: bool,
@@ -46,6 +55,7 @@ pub struct State {
     pub first_item: String,
     pub second_item: String,
     pub coin_count: u32,
+    pub race_start_time: std::time::Instant,
     pub value: i32,
 }
 impl State {
@@ -56,18 +66,21 @@ impl State {
             place: 24,
             first_item: "none".to_owned(),
             second_item: "none".to_owned(),
+            race_start_time: std::time::Instant::now(),
             coin_count: 0,
             value: 0,
         }
     }
 
     pub fn update_value(&mut self) {
-        self.value = (((((24 - self.place) as f32 / 23.0) * PLACEMENT_COEFFICIENT)
-            + ((ITEM_VALUES[&self.first_item] as f32 / 100.0) * ITEM_COEFFICIENT)
-            + ((ITEM_VALUES[&self.second_item] as f32 / 100.0) * ITEM_COEFFICIENT)
-            + (((20 - self.coin_count) as f32 / 19.0) * COIN_COEFFICIENT))
-            * TOTAL_MULT)
-            .ceil() as i32
+        self.value = (BASE_PRICE
+            + ((((ITEM_VALUES[&self.first_item] as f32 / 100.0) * ITEM_COEFFICIENT)
+                + ((ITEM_VALUES[&self.second_item] as f32 / 100.0) * ITEM_COEFFICIENT)
+                + ((self.coin_count as f32 / 20.0) * COIN_COEFFICIENT))
+                + (((24 - self.place) as f32 / 23.0) * PLACEMENT_COEFFICIENT)
+                //+ ((self.race_start_time.elapsed().as_secs() as f32 / 240.0) * TIME_COEFFICIENT)
+                    * TOTAL_MULT)
+                .ceil()) as i32
     }
 }
 impl std::fmt::Debug for State {
