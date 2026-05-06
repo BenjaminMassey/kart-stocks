@@ -82,21 +82,23 @@ fn update_state(
     llm_item_data: &[llamacpp_embed::VisionMessage],
     ocr_engine: &ocrs::OcrEngine,
 ) {
-    state.lock().unwrap().time = std::time::Instant::now();
+    let mut new_state = state.lock().unwrap().clone();
+    new_state.time = std::time::Instant::now();
     //let _ = frame.save(&format!("test_full.png"));
     if let Some(new_place) = crate::extract::get_placement(llm_model, llm_placement_data, frame) {
-        state.lock().unwrap().place = new_place;
+        new_state.place = new_place;
     }
     let new_first_item = crate::extract::get_first_item(llm_model, llm_item_data, frame);
     if crate::data::valid_item(&new_first_item) {
-        state.lock().unwrap().first_item = new_first_item;
+        new_state.first_item = new_first_item;
     }
     let new_second_item = crate::extract::get_second_item(llm_model, llm_item_data, frame);
     if crate::data::valid_item(&new_second_item) {
-        state.lock().unwrap().second_item = new_second_item;
+        new_state.second_item = new_second_item;
     }
     if let Some(new_coins) = crate::extract::get_coin_count(ocr_engine, frame) {
-        state.lock().unwrap().coin_count = new_coins;
+        new_state.coin_count = new_coins;
     }
-    state.lock().unwrap().update_value();
+    new_state.update_value();
+    *state.lock().unwrap() = new_state;
 }

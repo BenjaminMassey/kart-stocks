@@ -1,22 +1,28 @@
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::ServerMessage;
+use twitch_irc::ClientConfig;
+use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
-use twitch_irc::{ClientConfig, SecureTCPTransport};
 
 use std::sync::{Arc, Mutex};
 
+const TWITCH_IRC_DEBUG: bool = false;
 const CHANNEL_NAME: &str = "beanssbm";
+const BOT_NAME: &str = "kart_stocks";
 
-// TODO: messages *from* bot
 // TODO: actual stock game real stuff
 
 #[tokio::main]
-pub async fn run(state: Arc<Mutex<crate::data::State>>) {
-    let config = ClientConfig::default();
-    let (mut incoming_messages, client) =
-        TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
+pub async fn run(state: Arc<Mutex<crate::data::State>>, token: &str) {
+    let (mut incoming_messages, client) = TwitchIRCClient::<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >::new(ClientConfig::new_simple(
+        StaticLoginCredentials::new(BOT_NAME.to_owned(), Some(token.to_owned())),
+    ));
 
     let state_for_tokio = Arc::clone(&state);
+    let client_for_tokio = client.clone();
     let join_handle = tokio::spawn(async move {
         while let Some(message) = incoming_messages.recv().await {
             match message {
@@ -31,13 +37,20 @@ pub async fn run(state: Arc<Mutex<crate::data::State>>) {
                         println!("STOPPING!");
                         return;
                     } else if msg.message_text.to_lowercase() == "!value" {
-                        println!(
-                            "Twitch-side value: {}",
-                            state_for_tokio.lock().unwrap().value
-                        );
+                        client_for_tokio.say(
+                            CHANNEL_NAME.to_owned(),
+                            format!(
+                                "Current value: {}",
+                                state_for_tokio.lock().unwrap().value,
+                            )
+                        ).await.unwrap();
                     }
                 }
-                _ => {}
+                unknown_msg => {
+                    if TWITCH_IRC_DEBUG {
+                        println!("[debug] {unknown_msg:?}");
+                    }
+                }
             }
         }
     });

@@ -38,6 +38,7 @@ pub fn valid_item(item: &str) -> bool {
     ITEM_VALUES.contains_key(item)
 }
 
+#[derive(Clone)]
 pub struct State {
     pub running: bool,
     pub time: std::time::Instant,

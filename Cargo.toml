@@ -16,3 +16,9 @@ rten = "0.18.0"
 uuid = "1.23.1"
 llamacpp_embed = { git = "https://www.github.com/BenjaminMassey/llamacpp_embed" }
 phf = { version = "0.13.1", features = [ "macros" ] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = "0.4"
+rand = "0.10.1"
+open = "5"
+reqwest = { version = "0.12", features = ["blocking", "json"] }

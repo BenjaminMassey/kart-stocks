@@ -5,6 +5,7 @@ mod obs;
 mod ocr;
 mod run;
 mod twitch;
+mod twitch_auth;
 
 use std::sync::{Arc, Mutex};
 
@@ -17,6 +18,7 @@ fn main() {
     let obws_password = obs::get_obws_password();
     println!("\nFinished initializing!\n\nPlease choose your OBS source.\n");
     let obws_source = obs::choose_obs_source(&obws_password);
+    let twitch_token = twitch_auth::fetch_token();
     println!("\nSetup complete: doing initial prompting, followed by runs.\n");
 
     let state = Arc::new(Mutex::new(data::State::new()));
@@ -34,8 +36,7 @@ fn main() {
         );
     });
 
-    let state_for_twitch = Arc::clone(&state);
-    twitch::run(state_for_twitch);
+    twitch::run(Arc::clone(&state), &twitch_token);
 
     let _ = state_thread.join();
 }
