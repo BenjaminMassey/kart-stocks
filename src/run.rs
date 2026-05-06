@@ -97,7 +97,9 @@ fn update_state(
         new_state.second_item = new_second_item;
     }
     if let Some(new_coins) = crate::extract::get_coin_count(ocr_engine, frame) {
-        new_state.coin_count = new_coins;
+        if new_coins <= 20 {
+            new_state.coin_count = new_coins;
+        }
     }
     new_state.update_value();
     *state.lock().unwrap() = new_state;

@@ -56,7 +56,7 @@ mod tests {
         let llm_placement_data = llm::get_placement_data();
         let llm_item_data = llm::get_item_data();
         println!("Done initializing.");
-        for item in std::fs::read_dir("./test/images/").unwrap() {
+        for item in std::fs::read_dir("./test/").unwrap() {
             if let Ok(file) = item {
                 let mut correct = [false, false, false, false];
                 let name = file.file_name().into_string().unwrap();
@@ -73,12 +73,12 @@ mod tests {
                     &ocr_engine,
                 );
                 let coins: u32 = name_pieces[0].parse().unwrap();
-                let placement: u32 = name_pieces[1].parse().unwrap();
+                let placement: String = name_pieces[1].trim().to_owned();
                 let first_item: String = name_pieces[2].trim().to_owned();
                 let second_item: String = name_pieces[3].trim().trim_end_matches(".png").to_owned();
                 let s = state.lock().unwrap();
                 correct[0] = s.coin_count == coins;
-                correct[1] = s.place == placement;
+                correct[1] = s.place.to_string() == placement;
                 correct[2] = s.first_item == first_item;
                 correct[3] = s.second_item == second_item;
                 println!(

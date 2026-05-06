@@ -43,10 +43,16 @@ static ITEM_VALUES: phf::Map<&'static str, i32> = phf::phf_map! {
     "star" => 95,
     "bullet-bill" => 100,
 }; // should remain range from 0 through 100
-
 pub fn valid_item(item: &str) -> bool {
     ITEM_VALUES.contains_key(item)
 }
+pub fn get_items() -> Vec<String> {
+    ITEM_VALUES
+        .keys()
+        .map(|s| s.to_owned().to_owned())
+        .collect()
+}
+
 #[derive(Clone)]
 pub struct State {
     pub running: bool,

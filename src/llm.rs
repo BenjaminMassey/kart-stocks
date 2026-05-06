@@ -3,18 +3,18 @@ pub fn init() -> llamacpp_embed::LlamaEmbedModel {
         .with_mmproj("./llama-model/mmproj.gguf")
         .with_system_prompt("You are an image identifying robot.")
         .with_parallel(2)
-        .with_context_size(8192)
+        .with_context_size(16384)
         .build()
         .unwrap()
 }
 
 pub fn get_placement_data() -> Vec<llamacpp_embed::VisionMessage> {
-    get_training_data("./data/images/place/", &placement_prompt())
+    get_training_data("./data/images/places/", &placement_prompt())
 }
 
 pub fn get_item_data() -> Vec<llamacpp_embed::VisionMessage> {
-    get_training_data("./data/images/first/", &item_prompt())
-}
+    get_training_data("./data/images/items/", &item_prompt())
+} // TODO: missing some items
 
 fn get_training_data(dir: &str, prompt: &str) -> Vec<llamacpp_embed::VisionMessage> {
     let mut data: Vec<llamacpp_embed::VisionMessage> = vec![];
@@ -51,11 +51,14 @@ fn get_training_data(dir: &str, prompt: &str) -> Vec<llamacpp_embed::VisionMessa
 }
 
 pub fn placement_prompt() -> String {
-    "What placement number is this? Reply only with the placement number itself.".to_owned()
+    "What placement number is this? Reply only with the placement number itself. If there appears to be no number, reply \"none\"".to_owned()
 }
 
 pub fn item_prompt() -> String {
-    "These are the items in Mario Kart World: banana, bombomb, boo, boomerang, bullet-bill, coin-block, feather, golden_mushroom, green-shell, horn, lightning, mega-mushroom, mushroom, star, triple-banana, triple-green-shell, triple-mushroom, triple-red-shell. Which item is this image depicting? If it does not appear to be an item - mainly a black space - then reply: none. Reply only with the item name itself.".to_owned()
+    format!(
+        "These are the items in Mario Kart World: {}. Which item is this image depicting? If it does not appear to be an item - mainly a black space - then reply: none. Reply only with the item name itself.",
+        crate::data::get_items().join(", "),
+    )
 }
 
 pub fn identify(
@@ -65,18 +68,20 @@ pub fn identify(
     training_data: &[llamacpp_embed::VisionMessage],
     id_slot: u64,
 ) -> String {
-    clean_response(
-        &llamacpp_embed::chat_with_image_bytes(
-            model,
-            prompt,
-            image_bytes,
-            "image/jpeg",
-            Some(training_data),
-            Some(id_slot),
-        )
-        .unwrap()
-        .response,
-    )
+    let chat = llamacpp_embed::chat_with_image_bytes(
+        model,
+        prompt,
+        image_bytes,
+        "image/jpeg",
+        Some(training_data),
+        Some(id_slot),
+    );
+    if let Ok(message) = chat {
+        return clean_response(&message.response);
+    } else if let Err(message) = chat {
+        eprintln!("LLM error: \"{:?}\".", message);
+    }
+    "FAILURE".to_owned()
 }
 
 fn clean_response(response: &str) -> String {
@@ -87,4 +92,6 @@ fn clean_response(response: &str) -> String {
         .replace("_", "-")
         .replace("/", "")
         .replace("</think>", "")
+        .replace(".", "")
+        .replace(",", "")
 }
