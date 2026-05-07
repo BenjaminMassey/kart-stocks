@@ -7,3 +7,4 @@ token.json
 /llama-cpp
 /deployments
 llamacpp_log.txt
+portfolio.sqlite

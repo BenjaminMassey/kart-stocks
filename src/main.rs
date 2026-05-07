@@ -3,6 +3,7 @@ mod extract;
 mod llm;
 mod obs;
 mod ocr;
+mod portfolio;
 mod run;
 mod twitch;
 mod twitch_auth;
@@ -11,6 +12,7 @@ use std::sync::{Arc, Mutex};
 
 fn main() {
     println!("Starting kart-stocks...");
+    portfolio::init().unwrap();
     let ocr_engine = ocr::init();
     let mut llm_model = llm::init();
     let llm_placement_data = llm::get_placement_data();
