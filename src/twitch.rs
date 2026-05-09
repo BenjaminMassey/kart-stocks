@@ -1,4 +1,5 @@
 use twitch_irc::login::StaticLoginCredentials;
+use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
@@ -46,80 +47,17 @@ pub async fn run(
                         "User \"{}\" said \"{}\".",
                         msg.sender.name, msg.message_text,
                     );
-                    let mut response: Option<String> = None;
-                    if msg.message_text.to_lowercase() == "!value" {
-                        response = Some(format!(
-                            "Current value: {}",
-                            state_for_chat.lock().unwrap().value,
-                        ));
-                    } else if msg.message_text.to_lowercase() == "!join" {
-                        match crate::portfolio::add_shareholder(&msg.sender.name) {
-                            Ok(_) => {
-                                response = Some(format!(
-                                    "Welcome to the stock market, @{}!",
-                                    msg.sender.name
-                                ));
-                            }
-                            Err(e) => {
-                                eprintln!("{:?}", e);
-                            }
-                        }
-                    } else if msg.message_text.to_lowercase() == "!money" {
-                        match crate::portfolio::get_shareholder(&msg.sender.name) {
-                            Ok(shareholder) => {
-                                response = Some(if shareholder.invested {
-                                    format!(
-                                        "@{}: you have ${} (invested at ${}).",
-                                        shareholder.username, shareholder.money, shareholder.price
-                                    )
-                                } else {
-                                    format!(
-                                        "@{}: you have ${}.",
-                                        shareholder.username, shareholder.money
-                                    )
-                                })
-                            }
-                            Err(e) => {
-                                eprintln!("{:?}", e);
-                            }
-                        }
-                    } else if msg.message_text.to_lowercase() == "!buy" {
-                        let current_value = state_for_chat.lock().unwrap().value;
-                        match crate::portfolio::invest(&msg.sender.name, current_value) {
-                            Ok(_) => {
-                                response = Some(format!(
-                                    "@{}: bought in for ${}.",
-                                    msg.sender.name, current_value
-                                ))
-                            }
-                            Err(e) => {
-                                eprintln!("{:?}", e);
-                            }
-                        }
-                    } else if msg.message_text.to_lowercase() == "!sell" {
-                        let current_value = state_for_chat.lock().unwrap().value;
-                        match crate::portfolio::sell(&msg.sender.name, current_value) {
-                            Ok(_) => {
-                                response = Some(format!(
-                                    "@{}: sold for ${}.",
-                                    msg.sender.name, current_value
-                                ));
-                            }
-                            Err(e) => {
-                                eprintln!("{:?}", e);
-                            }
-                        }
-                    }
-                    if let Some(res) = response {
-                        println!("Bot response: \"{}\".", &res);
-                        if let Err(e) = client_for_chat.say(CHANNEL_NAME.to_owned(), res).await {
+                    if let Some(response) = game_interactions(Arc::clone(&state_for_chat), msg) {
+                        println!("Bot response: \"{}\".", &response);
+                        if let Err(e) = client_for_chat.say(CHANNEL_NAME.to_owned(), response).await
+                        {
                             eprintln!("twitch client.say(..) error: {:?}", e);
                         }
                     }
                 }
-                unknown_msg => {
+                other => {
                     if TWITCH_IRC_DEBUG {
-                        println!("[debug] {unknown_msg:?}");
+                        println!("[debug] {other:?}");
                     }
                 }
             }
@@ -135,4 +73,68 @@ pub async fn run(
 
     let mut state_lock = state.lock().unwrap();
     state_lock.running = false;
+}
+
+fn game_interactions(state: Arc<Mutex<crate::data::State>>, msg: PrivmsgMessage) -> Option<String> {
+    if msg.message_text.to_lowercase() == "!value" {
+        return Some(format!("Current value: {}", state.lock().unwrap().value,));
+    } else if msg.message_text.to_lowercase() == "!join" {
+        match crate::portfolio::add_shareholder(&msg.sender.name) {
+            Ok(_) => {
+                return Some(format!(
+                    "Welcome to the stock market, @{}!",
+                    msg.sender.name
+                ));
+            }
+            Err(e) => {
+                eprintln!("{:?}", e);
+            }
+        }
+    } else if msg.message_text.to_lowercase() == "!money" {
+        match crate::portfolio::get_shareholder(&msg.sender.name) {
+            Ok(shareholder) => {
+                return Some(if shareholder.invested {
+                    format!(
+                        "@{}: you have ${} (invested at ${}).",
+                        shareholder.username, shareholder.money, shareholder.price
+                    )
+                } else {
+                    format!(
+                        "@{}: you have ${}.",
+                        shareholder.username, shareholder.money
+                    )
+                })
+            }
+            Err(e) => {
+                eprintln!("{:?}", e);
+            }
+        }
+    } else if msg.message_text.to_lowercase() == "!buy" {
+        let current_value = state.lock().unwrap().value;
+        match crate::portfolio::invest(&msg.sender.name, current_value) {
+            Ok(_) => {
+                return Some(format!(
+                    "@{}: bought in for ${}.",
+                    msg.sender.name, current_value
+                ))
+            }
+            Err(e) => {
+                eprintln!("{:?}", e);
+            }
+        }
+    } else if msg.message_text.to_lowercase() == "!sell" {
+        let current_value = state.lock().unwrap().value;
+        match crate::portfolio::sell(&msg.sender.name, current_value) {
+            Ok(_) => {
+                return Some(format!(
+                    "@{}: sold for ${}.",
+                    msg.sender.name, current_value
+                ));
+            }
+            Err(e) => {
+                eprintln!("{:?}", e);
+            }
+        }
+    }
+    None
 }
