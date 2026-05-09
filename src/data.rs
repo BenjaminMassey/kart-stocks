@@ -1,13 +1,6 @@
 pub const PLACEMENT_SLOT: u64 = 0;
 pub const ITEMS_SLOT: u64 = 1;
 
-// TODO: time of race should matter
-const BASE_PRICE: f32 = 20.0;
-const ITEM_COEFFICIENT: f32 = 30.0;
-const COIN_COEFFICIENT: f32 = 15.0;
-const PLACEMENT_COEFFICIENT: f32 = 100.0;
-const TIME_COEFFICIENT: f32 = 1.0;
-const TOTAL_MULT: f32 = 1.0;
 static ITEM_VALUES: phf::Map<&'static str, i32> = phf::phf_map! {
     "none" => 0,
     "blooper" => 1,
@@ -55,6 +48,7 @@ pub fn get_items() -> Vec<String> {
 
 #[derive(Clone)]
 pub struct State {
+    settings: crate::settings::Settings,
     pub running: bool,
     pub racing: bool,
     pub time: std::time::Instant,
@@ -66,8 +60,9 @@ pub struct State {
     pub value: i32,
 }
 impl State {
-    pub fn new() -> Self {
+    pub fn new(settings: &crate::settings::Settings) -> Self {
         Self {
+            settings: settings.clone(),
             running: true,
             racing: false,
             time: std::time::Instant::now(),
@@ -82,16 +77,19 @@ impl State {
 
     pub fn update_value(&mut self) {
         if self.racing {
-            self.value = (BASE_PRICE
-                + ((((ITEM_VALUES[&self.first_item] as f32 / 100.0) * ITEM_COEFFICIENT)
-                    + ((ITEM_VALUES[&self.second_item] as f32 / 100.0) * ITEM_COEFFICIENT)
-                    + ((self.coin_count as f32 / 20.0) * COIN_COEFFICIENT))
-                    + (((24 - self.place) as f32 / 23.0) * PLACEMENT_COEFFICIENT)
-                    //+ ((self.race_start_time.elapsed().as_secs() as f32 / 240.0) * TIME_COEFFICIENT)
-                        * TOTAL_MULT)
+            self.value = (self.settings.game.base_price
+                + ((((ITEM_VALUES[&self.first_item] as f32 / 100.0)
+                    * self.settings.game.item_coefficient)
+                    + ((ITEM_VALUES[&self.second_item] as f32 / 100.0)
+                        * self.settings.game.item_coefficient)
+                    + ((self.coin_count as f32 / 20.0) * self.settings.game.coin_coefficient))
+                    + (((24 - self.place) as f32 / 23.0) * self.settings.game.placement_coefficient)
+                    //+ ((self.race_start_time.elapsed().as_secs() as f32 / 240.0) *
+                    //self.settings.game.time_coefficient)
+                        * self.settings.game.total_multiplier)
                     .ceil()) as i32
         } else {
-            self.value = BASE_PRICE.ceil() as i32;
+            self.value = self.settings.game.base_price.ceil() as i32;
         }
     }
 }

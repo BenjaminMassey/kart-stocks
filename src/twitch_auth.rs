@@ -3,9 +3,6 @@ use std::io::{Read, Write};
 use std::net::TcpListener;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const CLIENT_ID: &str = "";
-const CLIENT_SECRET: &str = "";
-const REDIRECT_URI: &str = "http://localhost:3000";
 const TOKEN_FILE: &str = "token.json";
 
 #[derive(Deserialize)]
@@ -28,7 +25,7 @@ fn now_secs() -> u64 {
         .as_secs()
 }
 
-pub fn fetch_token() -> String {
+pub fn fetch_token(settings: &crate::settings::Settings) -> String {
     if let Ok(contents) = std::fs::read_to_string(TOKEN_FILE) {
         if let Ok(stored) = serde_json::from_str::<StoredToken>(&contents) {
             if now_secs() < stored.retrieval_time + stored.expires_in {
@@ -39,16 +36,18 @@ pub fn fetch_token() -> String {
         }
     }
 
+    let redirect_uri = format!("http://127.0.0.1:{}", &settings.twitch.redirect_port);
+
     let auth_url = format!(
         "https://id.twitch.tv/oauth2/authorize?client_id={}&redirect_uri={}&response_type=code&scope=chat:read%20chat:edit",
-        CLIENT_ID, REDIRECT_URI
+        &settings.twitch.client_id, &redirect_uri
     );
 
     println!("Opening browser to authorize the bot...");
     open::that(&auth_url)
         .unwrap_or_else(|_| println!("Could not open browser. Visit manually:\n{}\n", auth_url));
 
-    let listener = TcpListener::bind("127.0.0.1:3000").unwrap();
+    let listener = TcpListener::bind(&redirect_uri).unwrap();
     let (mut stream, _) = listener.accept().unwrap();
 
     let mut buf = [0u8; 4096];
@@ -78,11 +77,11 @@ pub fn fetch_token() -> String {
     let response: TokenResponse = reqwest::blocking::Client::new()
         .post("https://id.twitch.tv/oauth2/token")
         .form(&[
-            ("client_id", CLIENT_ID),
-            ("client_secret", CLIENT_SECRET),
-            ("code", code.as_str()),
-            ("grant_type", "authorization_code"),
-            ("redirect_uri", REDIRECT_URI),
+            ("client_id", &settings.twitch.client_id),
+            ("client_secret", &settings.twitch.client_secret),
+            ("code", &code.as_str().to_owned()),
+            ("grant_type", &"authorization_code".to_owned()),
+            ("redirect_uri", &redirect_uri),
         ])
         .send()
         .unwrap()

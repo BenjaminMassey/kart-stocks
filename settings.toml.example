@@ -1,0 +1,30 @@
+title = "kart_stocks"
+
+[twitch]
+bot_channel = ""
+racer_channel = ""
+client_id = ""
+client_secret = ""
+redirect_port = 3000
+debug_messages = false
+
+[llm]
+cycle_time = 5
+port = 8080
+model_path = "./llama-model/model.gguf"
+mmproj_path = "./llama-model/mmproj.gguf"
+
+[obs]
+ip = "127.0.0.1"
+port = 4455
+password = ""
+
+[game]
+database_path = "./portfolio.sqlite"
+starting_money = 100
+base_price = 20.0
+item_coefficient = 30.0
+coin_coefficient = 15.0
+placement_coefficient = 100.0
+time_coefficient = 1.0
+total_multiplier = 1.0

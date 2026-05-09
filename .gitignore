@@ -1,10 +1,10 @@
 /target
 test*.png
 /data/ocr_models/*.rten
-obws_password.txt
 token.json
 /llama-model/*.gguf
 /llama-cpp
 /deployments
 llamacpp_log.txt
 portfolio.sqlite
+settings.toml

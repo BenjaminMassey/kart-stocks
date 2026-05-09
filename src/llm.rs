@@ -1,6 +1,7 @@
-pub fn init() -> llamacpp_embed::LlamaEmbedModel {
-    llamacpp_embed::LlamaEmbedBuilder::new("./llama-model/model.gguf")
-        .with_mmproj("./llama-model/mmproj.gguf")
+pub fn init(settings: &crate::settings::Settings) -> llamacpp_embed::LlamaEmbedModel {
+    llamacpp_embed::LlamaEmbedBuilder::new(&settings.llm.model_path)
+        .with_mmproj(&settings.llm.mmproj_path)
+        .with_port(settings.llm.port)
         .with_system_prompt("You are an image identifying robot.")
         .with_parallel(2)
         .with_context_size(16384)

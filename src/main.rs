@@ -5,31 +5,35 @@ mod obs;
 mod ocr;
 mod portfolio;
 mod run;
+mod settings;
 mod twitch;
 mod twitch_auth;
 
 use std::sync::{Arc, Mutex};
 
+const RESOLUTION: (f32, f32) = (1280.0, 720.0);
+
 fn main() {
     println!("Starting kart-stocks...");
-    portfolio::init().unwrap();
+    let settings = settings::get_settings();
+    portfolio::init(&settings).unwrap();
     let ocr_engine = ocr::init();
-    let mut llm_model = llm::init();
+    let mut llm_model = llm::init(&settings);
     let llm_placement_data = llm::get_placement_data();
     let llm_item_data = llm::get_item_data();
-    let obws_password = obs::get_obws_password();
     println!("\nFinished initializing!\n\nPlease choose your OBS source.\n");
-    let obws_source = obs::choose_obs_source(&obws_password);
-    let twitch_token = twitch_auth::fetch_token();
+    let obws_source = obs::choose_obs_source(&settings);
+    let twitch_token = twitch_auth::fetch_token(&settings);
     println!("\nSetup complete: doing initial prompting, followed by runs.\n");
 
-    let state = Arc::new(Mutex::new(data::State::new()));
+    let state = Arc::new(Mutex::new(data::State::new(&settings)));
     let (send_to_twitch, receive_from_hotkey) = tokio::sync::mpsc::unbounded_channel::<String>();
 
+    let settings_for_run = settings.clone();
     let state_for_updates = Arc::clone(&state);
     let state_thread = std::thread::spawn(move || {
         run::state_loop(
-            &obws_password,
+            &settings_for_run,
             obws_source,
             state_for_updates,
             &mut llm_model,
@@ -44,6 +48,7 @@ fn main() {
         key_code: livesplit_hotkey::KeyCode::KeyK,
         modifiers: livesplit_hotkey::Modifiers::CONTROL | livesplit_hotkey::Modifiers::ALT,
     };
+    let settings_for_hotkey = settings.clone();
     let state_for_hotkey = Arc::clone(&state);
     hotkey_hook
         .register(hotkey, move || {
@@ -59,14 +64,19 @@ fn main() {
                 send_to_twitch
                     .send(format!("Selling to all investors at ${}.", state.value))
                     .expect("Error sending from hotkey to twitch.");
-                if let Err(e) = portfolio::sell_all(state.value) {
+                if let Err(e) = portfolio::sell_all(&settings_for_hotkey.clone(), state.value) {
                     eprintln!("{:?}", e);
                 }
             }
         })
         .unwrap();
 
-    twitch::run(Arc::clone(&state), receive_from_hotkey, &twitch_token);
+    twitch::run(
+        &settings.clone(),
+        Arc::clone(&state),
+        receive_from_hotkey,
+        &twitch_token,
+    );
 
     let _ = state_thread.join();
 
@@ -80,11 +90,12 @@ mod tests {
     #[test]
     fn images_directory() {
         println!("Starting test run...");
-        let state = Arc::new(Mutex::new(data::State::new()));
+        let settings = settings::get_settings();
+        let state = Arc::new(Mutex::new(data::State::new(&settings)));
         println!("Initializing OCR engine...");
         let ocr_engine = ocr::init();
         println!("Initializing LLM...");
-        let mut llm_model = llm::init();
+        let mut llm_model = llm::init(&settings);
         let llm_placement_data = llm::get_placement_data();
         let llm_item_data = llm::get_item_data();
         println!("Done initializing.");

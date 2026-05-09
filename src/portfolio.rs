@@ -1,6 +1,3 @@
-const DB_PATH: &str = "./portfolio.sqlite";
-const STARTING_MONEY: i32 = 100;
-
 pub struct ShareholderInfo {
     pub username: String,
     pub money: i32,
@@ -8,8 +5,8 @@ pub struct ShareholderInfo {
     pub price: i32,
 }
 
-pub fn init() -> Result<(), Box<dyn std::error::Error>> {
-    let conn = rusqlite::Connection::open(DB_PATH)?;
+pub fn init(settings: &crate::settings::Settings) -> Result<(), Box<dyn std::error::Error>> {
+    let conn = rusqlite::Connection::open(&settings.game.database_path)?;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS shareholders (
              username TEXT PRIMARY KEY,
@@ -21,8 +18,11 @@ pub fn init() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-pub fn add_shareholder(username: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let mut conn = rusqlite::Connection::open(DB_PATH)?;
+pub fn add_shareholder(
+    settings: &crate::settings::Settings,
+    username: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut conn = rusqlite::Connection::open(&settings.game.database_path)?;
     let existing_count: i32 = conn.query_row(
         "SELECT COUNT(*) FROM shareholders WHERE username = ?1",
         [username],
@@ -34,14 +34,17 @@ pub fn add_shareholder(username: &str) -> Result<(), Box<dyn std::error::Error>>
     let tx = conn.transaction()?;
     tx.execute(
         "INSERT INTO shareholders (username, money, invested, price) VALUES (?1, ?2, 0, 0)",
-        [username, &STARTING_MONEY.to_string()],
+        [username, &settings.game.starting_money.to_string()],
     )?;
     tx.commit()?;
     Ok(())
 }
 
-pub fn get_shareholder(username: &str) -> Result<ShareholderInfo, Box<dyn std::error::Error>> {
-    let conn = rusqlite::Connection::open(DB_PATH)?;
+pub fn get_shareholder(
+    settings: &crate::settings::Settings,
+    username: &str,
+) -> Result<ShareholderInfo, Box<dyn std::error::Error>> {
+    let conn = rusqlite::Connection::open(&settings.game.database_path)?;
     let mut stmt = conn
         .prepare("SELECT * FROM shareholders WHERE username = ?1")
         .unwrap();
@@ -58,8 +61,12 @@ pub fn get_shareholder(username: &str) -> Result<ShareholderInfo, Box<dyn std::e
     }
 }
 
-pub fn invest(username: &str, value: i32) -> Result<(), Box<dyn std::error::Error>> {
-    let mut conn = rusqlite::Connection::open(DB_PATH)?;
+pub fn invest(
+    settings: &crate::settings::Settings,
+    username: &str,
+    value: i32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut conn = rusqlite::Connection::open(&settings.game.database_path)?;
     if conn
         .query_row(
             "SELECT * FROM shareholders WHERE username = ?1",
@@ -91,8 +98,12 @@ pub fn invest(username: &str, value: i32) -> Result<(), Box<dyn std::error::Erro
     Ok(())
 }
 
-pub fn sell(username: &str, value: i32) -> Result<(), Box<dyn std::error::Error>> {
-    let mut conn = rusqlite::Connection::open(DB_PATH)?;
+pub fn sell(
+    settings: &crate::settings::Settings,
+    username: &str,
+    value: i32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut conn = rusqlite::Connection::open(&settings.game.database_path)?;
     if conn
         .query_row(
             "SELECT * FROM shareholders WHERE username = ?1",
@@ -121,8 +132,11 @@ pub fn sell(username: &str, value: i32) -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
-pub fn sell_all(value: i32) -> Result<(), Box<dyn std::error::Error>> {
-    let mut conn = rusqlite::Connection::open(DB_PATH)?;
+pub fn sell_all(
+    settings: &crate::settings::Settings,
+    value: i32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut conn = rusqlite::Connection::open(&settings.game.database_path)?;
     let tx = conn.transaction()?;
     tx.execute(
         "UPDATE shareholders SET money = money + ?1, invested = 0 WHERE invested = 1",
