@@ -12,25 +12,31 @@ pub fn state_loop(
     ocr_engine: &ocrs::OcrEngine,
 ) {
     loop {
-        crate::run::from_obs(
-            obws_password,
-            obws_source,
-            state.clone(),
-            llm_model,
-            llm_placement_data,
-            llm_item_data,
-            ocr_engine,
-        );
+        if state.lock().unwrap().racing {
+            crate::run::from_obs(
+                obws_password,
+                obws_source,
+                state.clone(),
+                llm_model,
+                llm_placement_data,
+                llm_item_data,
+                ocr_engine,
+            );
+        }
+        state.lock().unwrap().time = std::time::Instant::now();
+        state.lock().unwrap().update_value();
         println!("{:?}", state.lock().unwrap());
 
         if !state.lock().unwrap().running {
             break;
         }
 
-        std::thread::sleep(std::time::Duration::from_secs(
-            0i32.max(CYCLE_TIME as i32 - state.lock().unwrap().time.elapsed().as_secs() as i32)
-                as u64,
-        ));
+        let elapsed = state.lock().unwrap().time.elapsed().as_secs();
+        {
+            std::thread::sleep(std::time::Duration::from_secs(
+                0i32.max(CYCLE_TIME as i32 - elapsed as i32) as u64,
+            ));
+        }
     }
     llamacpp_embed::stop(llm_model).unwrap();
 }
@@ -83,7 +89,6 @@ fn update_state(
     ocr_engine: &ocrs::OcrEngine,
 ) {
     let mut new_state = state.lock().unwrap().clone();
-    new_state.time = std::time::Instant::now();
     //let _ = frame.save(&format!("test_full.png"));
     if let Some(new_place) = crate::extract::get_placement(llm_model, llm_placement_data, frame) {
         new_state.place = new_place;
@@ -101,6 +106,5 @@ fn update_state(
             new_state.coin_count = new_coins;
         }
     }
-    new_state.update_value();
     *state.lock().unwrap() = new_state;
 }

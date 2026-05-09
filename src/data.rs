@@ -56,6 +56,7 @@ pub fn get_items() -> Vec<String> {
 #[derive(Clone)]
 pub struct State {
     pub running: bool,
+    pub racing: bool,
     pub time: std::time::Instant,
     pub place: u32,
     pub first_item: String,
@@ -68,6 +69,7 @@ impl State {
     pub fn new() -> Self {
         Self {
             running: true,
+            racing: false,
             time: std::time::Instant::now(),
             place: 24,
             first_item: "none".to_owned(),
@@ -79,22 +81,26 @@ impl State {
     }
 
     pub fn update_value(&mut self) {
-        self.value = (BASE_PRICE
-            + ((((ITEM_VALUES[&self.first_item] as f32 / 100.0) * ITEM_COEFFICIENT)
-                + ((ITEM_VALUES[&self.second_item] as f32 / 100.0) * ITEM_COEFFICIENT)
-                + ((self.coin_count as f32 / 20.0) * COIN_COEFFICIENT))
-                + (((24 - self.place) as f32 / 23.0) * PLACEMENT_COEFFICIENT)
-                //+ ((self.race_start_time.elapsed().as_secs() as f32 / 240.0) * TIME_COEFFICIENT)
-                    * TOTAL_MULT)
-                .ceil()) as i32
+        if self.racing {
+            self.value = (BASE_PRICE
+                + ((((ITEM_VALUES[&self.first_item] as f32 / 100.0) * ITEM_COEFFICIENT)
+                    + ((ITEM_VALUES[&self.second_item] as f32 / 100.0) * ITEM_COEFFICIENT)
+                    + ((self.coin_count as f32 / 20.0) * COIN_COEFFICIENT))
+                    + (((24 - self.place) as f32 / 23.0) * PLACEMENT_COEFFICIENT)
+                    //+ ((self.race_start_time.elapsed().as_secs() as f32 / 240.0) * TIME_COEFFICIENT)
+                        * TOTAL_MULT)
+                    .ceil()) as i32
+        } else {
+            self.value = BASE_PRICE.ceil() as i32;
+        }
     }
 }
 impl std::fmt::Debug for State {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "[{}, {}¢, {}, {}] -> {}",
-            self.place, self.coin_count, self.first_item, self.second_item, self.value
+            "<{}> [{}, {}¢, {}, {}] -> {}",
+            self.racing, self.place, self.coin_count, self.first_item, self.second_item, self.value
         )
     }
 }

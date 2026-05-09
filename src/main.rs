@@ -24,6 +24,7 @@ fn main() {
     println!("\nSetup complete: doing initial prompting, followed by runs.\n");
 
     let state = Arc::new(Mutex::new(data::State::new()));
+    let (send_to_twitch, receive_from_hotkey) = tokio::sync::mpsc::unbounded_channel::<String>();
 
     let state_for_updates = Arc::clone(&state);
     let state_thread = std::thread::spawn(move || {
@@ -38,9 +39,38 @@ fn main() {
         );
     });
 
-    twitch::run(Arc::clone(&state), &twitch_token);
+    let hotkey_hook = livesplit_hotkey::Hook::new().unwrap();
+    let hotkey = livesplit_hotkey::Hotkey {
+        key_code: livesplit_hotkey::KeyCode::KeyK,
+        modifiers: livesplit_hotkey::Modifiers::CONTROL | livesplit_hotkey::Modifiers::ALT,
+    };
+    let state_for_hotkey = Arc::clone(&state);
+    hotkey_hook
+        .register(hotkey, move || {
+            let mut state = state_for_hotkey.lock().unwrap();
+            state.racing = !state.racing;
+            println!("{}ed racing!", if state.racing { "Start" } else { "Stopp" });
+            if state.racing {
+                state.race_start_time = std::time::Instant::now();
+                send_to_twitch
+                    .send("Starting race!".to_owned())
+                    .expect("Error sending from hotkey to twitch.");
+            } else {
+                send_to_twitch
+                    .send(format!("Selling to all investors at ${}.", state.value))
+                    .expect("Error sending from hotkey to twitch.");
+                if let Err(e) = portfolio::sell_all(state.value) {
+                    eprintln!("{:?}", e);
+                }
+            }
+        })
+        .unwrap();
+
+    twitch::run(Arc::clone(&state), receive_from_hotkey, &twitch_token);
 
     let _ = state_thread.join();
+
+    println!("Goodbye!");
 }
 
 #[cfg(test)]

@@ -120,3 +120,15 @@ pub fn sell(username: &str, value: i32) -> Result<(), Box<dyn std::error::Error>
 
     Ok(())
 }
+
+pub fn sell_all(value: i32) -> Result<(), Box<dyn std::error::Error>> {
+    let mut conn = rusqlite::Connection::open(DB_PATH)?;
+    let tx = conn.transaction()?;
+    tx.execute(
+        "UPDATE shareholders SET money = money + ?1, invested = 0 WHERE invested = 1",
+        [value],
+    )?;
+    tx.commit()?;
+    println!("Sold all at ${}", value);
+    Ok(())
+}

@@ -13,3 +13,7 @@ Use `cargo test -- --nocapture` to see the `println!(..)`s.
 ## Model
 
 Using Qwen3-VL-8B-Instruct with Q4_K_M (plus f16 mmproj) from here: https://huggingface.co/Qwen/Qwen3-VL-8B-Instruct-GGUF
+
+## Hotkey
+
+On Linux under Wayland, I had to make sure I was in the "input" group, by running `sudo usermod -aG input $USER` and restarting.
