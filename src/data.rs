@@ -77,20 +77,58 @@ impl State {
 
     pub fn update_value(&mut self) {
         if self.racing {
-            self.value = (self.settings.game.base_price
-                + ((((ITEM_VALUES[&self.first_item] as f32 / 100.0)
-                    * self.settings.game.item_coefficient)
-                    + ((ITEM_VALUES[&self.second_item] as f32 / 100.0)
-                        * self.settings.game.item_coefficient)
-                    + ((self.coin_count as f32 / 20.0) * self.settings.game.coin_coefficient))
-                    + (((24 - self.place) as f32 / 23.0) * self.settings.game.placement_coefficient)
-                    //+ ((self.race_start_time.elapsed().as_secs() as f32 / 240.0) *
-                    //self.settings.game.time_coefficient)
-                        * self.settings.game.total_multiplier)
-                    .ceil()) as i32
+            let place = (24 - self.place) as f32 / 23.0;
+            let first_item = ITEM_VALUES[&self.first_item] as f32 / 100.0;
+            let second_item = ITEM_VALUES[&self.second_item] as f32 / 100.0;
+            let coin_count = self.coin_count as f32 / 20.0;
+            let race_time = self.race_start_time.elapsed().as_secs() as f32 / 120.0;
+            self.value = self.equation(place, first_item, second_item, coin_count, race_time);
         } else {
-            self.value = self.settings.game.base_price.ceil() as i32;
+            self.value = self.settings.game.initial_price;
         }
+    }
+
+    fn equation(
+        &self,
+        place: f32,
+        first_item: f32,
+        second_item: f32,
+        coin_count: f32,
+        race_time: f32,
+    ) -> i32 {
+        // Items matter more the higher you're placed
+        let item_scale = 0.5 + 0.5 * place;
+        let w_items_eff = self.settings.game.items_weight * item_scale;
+
+        // Renormalize so weights sum to 1.0
+        let total = self.settings.game.place_weight + w_items_eff + self.settings.game.coins_weight;
+        let w_place = self.settings.game.place_weight / total;
+        let w_items = w_items_eff / total;
+        let w_coins = self.settings.game.coins_weight / total;
+
+        // Centered deviations from average
+        let d_place = place - 0.5;
+        let d_items = (first_item + second_item) / 2.0 - 0.5;
+        let d_coins = coin_count - 0.5;
+
+        // Weighted performance score
+        let p = w_place * d_place + w_items * d_items + w_coins * d_coins;
+
+        // Confidence factor scales with race progress
+        let c = self.settings.game.confidence + (1.0 - self.settings.game.confidence) * race_time;
+
+        // Final stock value
+        let stock =
+            self.settings.game.base_price * (1.0 + 2.0 * self.settings.game.volatility * c * p);
+        0.max(stock.ceil() as i32)
+    }
+
+    pub fn sell_all_price(&self) -> i32 {
+        0.max(
+            (self.settings.game.base_price
+                * ((24 - self.place) as f32 / self.settings.game.place_target as f32))
+                .ceil() as i32,
+        )
     }
 }
 impl std::fmt::Debug for State {

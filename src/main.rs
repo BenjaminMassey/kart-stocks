@@ -61,10 +61,11 @@ fn main() {
                     .send("Starting race!".to_owned())
                     .expect("Error sending from hotkey to twitch.");
             } else {
+                let value = state.sell_all_price();
                 send_to_twitch
-                    .send(format!("Selling to all investors at ${}.", state.value))
+                    .send(format!("Selling to all investors at ${}.", value))
                     .expect("Error sending from hotkey to twitch.");
-                if let Err(e) = portfolio::sell_all(&settings_for_hotkey.clone(), state.value) {
+                if let Err(e) = portfolio::sell_all(&settings_for_hotkey.clone(), value) {
                     eprintln!("{:?}", e);
                 }
             }

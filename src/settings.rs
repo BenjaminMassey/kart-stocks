@@ -37,12 +37,14 @@ pub struct Obs {
 pub struct Game {
     pub database_path: String,
     pub starting_money: i32,
+    pub initial_price: i32,
     pub base_price: f32,
-    pub item_coefficient: f32,
-    pub coin_coefficient: f32,
-    pub placement_coefficient: f32,
-    pub time_coefficient: f32,
-    pub total_multiplier: f32,
+    pub place_target: i32,
+    pub volatility: f32,
+    pub confidence: f32,
+    pub place_weight: f32,
+    pub items_weight: f32,
+    pub coins_weight: f32,
 }
 
 pub fn get_settings() -> Settings {

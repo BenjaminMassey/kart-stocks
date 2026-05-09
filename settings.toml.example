@@ -22,9 +22,12 @@ password = ""
 [game]
 database_path = "./portfolio.sqlite"
 starting_money = 100
-base_price = 20.0
-item_coefficient = 30.0
-coin_coefficient = 15.0
-placement_coefficient = 100.0
-time_coefficient = 1.0
-total_multiplier = 1.0
+initial_price = 22 # before race starts
+base_price = 30.0
+place_target = 12 # above good, below bad: on race end
+volatility = 1.6
+confidence = 0.3
+# weights should add to 1
+place_weight = 0.6
+items_weight = 0.35
+coins_weight = 0.05
