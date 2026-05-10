@@ -9,7 +9,7 @@ redirect_port = 3000
 debug_messages = false
 
 [llm]
-cycle_time = 5
+cycle_time = 5 # seconds
 port = 8080
 model_path = "./llama-model/model.gguf"
 mmproj_path = "./llama-model/mmproj.gguf"
@@ -31,3 +31,10 @@ confidence = 0.3
 place_weight = 0.6
 items_weight = 0.35
 coins_weight = 0.05
+
+[window]
+title = "Kart Stocks"
+width = 600
+height = 420
+border = 10.0
+float_time = 3000 # milliseconds

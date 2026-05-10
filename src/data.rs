@@ -58,6 +58,8 @@ pub struct State {
     pub coin_count: u32,
     pub race_start_time: std::time::Instant,
     pub value: i32,
+    pub recent_buys: Vec<i32>,
+    pub recent_sells: Vec<i32>,
 }
 impl State {
     pub fn new(settings: &crate::settings::Settings) -> Self {
@@ -72,6 +74,8 @@ impl State {
             race_start_time: std::time::Instant::now(),
             coin_count: 0,
             value: 0,
+            recent_buys: vec![],
+            recent_sells: vec![],
         }
     }
 

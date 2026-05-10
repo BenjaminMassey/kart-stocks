@@ -6,6 +6,8 @@ TODO
 
 Need to go into OBS, click "Tools" on the top taskbar, click "WebSocket Server Settings", check to enable, then grab the listed password, and place it in `./obws_password.txt`.
 
+You will also add the "Kart Stocks" (default name) window. If OBS gets its window decorator, then add a filter of "Crop/Mask" to remove that (increase "Top" value). Add a filter of "Chroma Key", setting the color to #0000ff and enough Similarity to remove the blue screen: I needed 270.
+
 ## Testing
 
 Use `cargo test -- --nocapture` to see the `println!(..)`s.

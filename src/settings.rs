@@ -6,6 +6,7 @@ pub struct Settings {
     pub llm: Llm,
     pub obs: Obs,
     pub game: Game,
+    pub window: Window,
 }
 
 #[derive(Clone, Deserialize)]
@@ -45,6 +46,15 @@ pub struct Game {
     pub place_weight: f32,
     pub items_weight: f32,
     pub coins_weight: f32,
+}
+
+#[derive(Clone, Deserialize)]
+pub struct Window {
+    pub title: String,
+    pub width: i32,
+    pub height: i32,
+    pub border: f32,
+    pub float_time: u128,
 }
 
 pub fn get_settings() -> Settings {

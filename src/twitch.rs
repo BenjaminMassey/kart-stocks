@@ -6,12 +6,18 @@ use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
 
+pub struct InvestmentAction {
+    pub is_buy: bool, // as opposed to a sell
+    pub value: i32,
+}
+
 #[tokio::main]
 pub async fn run(
     settings: &crate::settings::Settings,
     state: Arc<Mutex<crate::data::State>>,
     mut receive_from_hotkey: tokio::sync::mpsc::UnboundedReceiver<String>,
     token: &str,
+    send_to_window: tokio::sync::mpsc::UnboundedSender<InvestmentAction>,
 ) {
     let (mut incoming_messages, client) = TwitchIRCClient::<
         SecureTCPTransport,
@@ -49,6 +55,7 @@ pub async fn run(
                         &settings_for_chat.clone(),
                         Arc::clone(&state_for_chat),
                         msg,
+                        send_to_window.clone(),
                     ) {
                         println!("Bot response: \"{}\".", &response);
                         if let Err(e) = client_for_chat
@@ -86,6 +93,7 @@ fn game_interactions(
     settings: &crate::settings::Settings,
     state: Arc<Mutex<crate::data::State>>,
     msg: PrivmsgMessage,
+    send_to_window: tokio::sync::mpsc::UnboundedSender<InvestmentAction>,
 ) -> Option<String> {
     if msg.message_text.to_lowercase() == "!value" {
         return Some(format!("Current value: {}", state.lock().unwrap().value,));
@@ -124,10 +132,16 @@ fn game_interactions(
         let current_value = state.lock().unwrap().value;
         match crate::portfolio::invest(settings, &msg.sender.name, current_value) {
             Ok(_) => {
+                send_to_window
+                    .send(InvestmentAction {
+                        is_buy: true,
+                        value: current_value,
+                    })
+                    .unwrap();
                 return Some(format!(
                     "@{}: bought in for ${}.",
                     msg.sender.name, current_value
-                ))
+                ));
             }
             Err(e) => {
                 eprintln!("{:?}", e);
@@ -137,6 +151,16 @@ fn game_interactions(
         let current_value = state.lock().unwrap().value;
         match crate::portfolio::sell(settings, &msg.sender.name, current_value) {
             Ok(_) => {
+                let net = current_value
+                    - crate::portfolio::get_shareholder(settings, &msg.sender.name)
+                        .unwrap()
+                        .price;
+                send_to_window
+                    .send(InvestmentAction {
+                        is_buy: false,
+                        value: net,
+                    })
+                    .unwrap();
                 return Some(format!(
                     "@{}: sold for ${}.",
                     msg.sender.name, current_value

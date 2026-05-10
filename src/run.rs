@@ -8,6 +8,7 @@ pub fn state_loop(
     llm_placement_data: &[llamacpp_embed::VisionMessage],
     llm_item_data: &[llamacpp_embed::VisionMessage],
     ocr_engine: &ocrs::OcrEngine,
+    send_to_window: tokio::sync::mpsc::UnboundedSender<i32>,
 ) {
     loop {
         if state.lock().unwrap().racing {
@@ -24,6 +25,11 @@ pub fn state_loop(
         state.lock().unwrap().time = std::time::Instant::now();
         state.lock().unwrap().update_value();
         println!("{:?}", state.lock().unwrap());
+        if let Err(e) = send_to_window.send(state.lock().unwrap().value) {
+            eprintln!("{:?}", e);
+        }
+        state.lock().unwrap().recent_buys.clear();
+        state.lock().unwrap().recent_sells.clear();
 
         if !state.lock().unwrap().running {
             break;

@@ -36,8 +36,7 @@ pub fn fetch_token(settings: &crate::settings::Settings) -> String {
         }
     }
 
-    let redirect_uri = format!("http://127.0.0.1:{}", &settings.twitch.redirect_port);
-
+    let redirect_uri = format!("http://localhost:{}", &settings.twitch.redirect_port);
     let auth_url = format!(
         "https://id.twitch.tv/oauth2/authorize?client_id={}&redirect_uri={}&response_type=code&scope=chat:read%20chat:edit",
         &settings.twitch.client_id, &redirect_uri
@@ -47,7 +46,8 @@ pub fn fetch_token(settings: &crate::settings::Settings) -> String {
     open::that(&auth_url)
         .unwrap_or_else(|_| println!("Could not open browser. Visit manually:\n{}\n", auth_url));
 
-    let listener = TcpListener::bind(&redirect_uri).unwrap();
+    let tcp_uri = format!("127.0.0.1:{}", &settings.twitch.redirect_port);
+    let listener = TcpListener::bind(&tcp_uri).unwrap();
     let (mut stream, _) = listener.accept().unwrap();
 
     let mut buf = [0u8; 4096];

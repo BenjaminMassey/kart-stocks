@@ -8,6 +8,7 @@ mod run;
 mod settings;
 mod twitch;
 mod twitch_auth;
+mod window;
 
 use std::sync::{Arc, Mutex};
 
@@ -27,8 +28,8 @@ fn main() {
     println!("\nSetup complete: doing initial prompting, followed by runs.\n");
 
     let state = Arc::new(Mutex::new(data::State::new(&settings)));
-    let (send_to_twitch, receive_from_hotkey) = tokio::sync::mpsc::unbounded_channel::<String>();
 
+    let (send_value_to_window, receive_from_run) = tokio::sync::mpsc::unbounded_channel::<i32>();
     let settings_for_run = settings.clone();
     let state_for_updates = Arc::clone(&state);
     let state_thread = std::thread::spawn(move || {
@@ -40,9 +41,15 @@ fn main() {
             &llm_placement_data,
             &llm_item_data,
             &ocr_engine,
+            send_value_to_window,
         );
     });
 
+    let (send_actions_to_window, receive_from_twitch) =
+        tokio::sync::mpsc::unbounded_channel::<twitch::InvestmentAction>();
+    window::start(&settings, receive_from_run, receive_from_twitch);
+
+    let (send_to_twitch, receive_from_hotkey) = tokio::sync::mpsc::unbounded_channel::<String>();
     let hotkey_hook = livesplit_hotkey::Hook::new().unwrap();
     let hotkey = livesplit_hotkey::Hotkey {
         key_code: livesplit_hotkey::KeyCode::KeyK,
@@ -77,6 +84,7 @@ fn main() {
         Arc::clone(&state),
         receive_from_hotkey,
         &twitch_token,
+        send_actions_to_window,
     );
 
     let _ = state_thread.join();
