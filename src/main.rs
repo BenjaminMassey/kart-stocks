@@ -45,11 +45,19 @@ fn main() {
         );
     });
 
+    let (send_racing_to_window, receive_racing_from_hotkey) =
+        tokio::sync::mpsc::unbounded_channel::<Option<i32>>();
     let (send_actions_to_window, receive_from_twitch) =
         tokio::sync::mpsc::unbounded_channel::<twitch::InvestmentAction>();
-    window::start(&settings, receive_from_run, receive_from_twitch);
+    window::start(
+        &settings,
+        receive_from_run,
+        receive_from_twitch,
+        receive_racing_from_hotkey,
+    );
 
-    let (send_to_twitch, receive_from_hotkey) = tokio::sync::mpsc::unbounded_channel::<String>();
+    let (send_message_to_twitch, receive_message_from_hotkey) =
+        tokio::sync::mpsc::unbounded_channel::<String>();
     let hotkey_hook = livesplit_hotkey::Hook::new().unwrap();
     let hotkey = livesplit_hotkey::Hotkey {
         key_code: livesplit_hotkey::KeyCode::KeyK,
@@ -64,17 +72,23 @@ fn main() {
             println!("{}ed racing!", if state.racing { "Start" } else { "Stopp" });
             if state.racing {
                 state.race_start_time = std::time::Instant::now();
-                send_to_twitch
+                send_message_to_twitch
                     .send("Starting race!".to_owned())
                     .expect("Error sending from hotkey to twitch.");
+                send_racing_to_window
+                    .send(None)
+                    .expect("Error sending from hotkey to window.");
             } else {
                 let value = state.sell_all_price();
-                send_to_twitch
+                send_message_to_twitch
                     .send(format!("Selling to all investors at ${}.", value))
                     .expect("Error sending from hotkey to twitch.");
                 if let Err(e) = portfolio::sell_all(&settings_for_hotkey.clone(), value) {
                     eprintln!("{:?}", e);
                 }
+                send_racing_to_window
+                    .send(Some(value))
+                    .expect("Error sending from hotkey to window.");
             }
         })
         .unwrap();
@@ -82,7 +96,7 @@ fn main() {
     twitch::run(
         &settings.clone(),
         Arc::clone(&state),
-        receive_from_hotkey,
+        receive_message_from_hotkey,
         &twitch_token,
         send_actions_to_window,
     );

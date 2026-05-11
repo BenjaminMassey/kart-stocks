@@ -6,6 +6,7 @@ pub fn start(
     settings: &crate::settings::Settings,
     receive_from_run: tokio::sync::mpsc::UnboundedReceiver<i32>,
     receive_from_twitch: tokio::sync::mpsc::UnboundedReceiver<crate::twitch::InvestmentAction>,
+    receive_from_hotkey: tokio::sync::mpsc::UnboundedReceiver<Option<i32>>,
 ) {
     let conf = Conf {
         window_title: settings.window.title.clone(),
@@ -19,7 +20,12 @@ pub fn start(
     let _ = std::thread::spawn(move || {
         macroquad::Window::from_config(
             conf,
-            run(settings_for_run, receive_from_run, receive_from_twitch),
+            run(
+                settings_for_run,
+                receive_from_run,
+                receive_from_twitch,
+                receive_from_hotkey,
+            ),
         );
     });
 }
@@ -28,16 +34,19 @@ struct ActionText {
     value: i32,
     start_time: std::time::Instant,
     x_pos: f32,
+    special: bool,
 }
 
 async fn run(
     settings: crate::settings::Settings,
     mut receive_from_run: tokio::sync::mpsc::UnboundedReceiver<i32>,
     mut receive_from_twitch: tokio::sync::mpsc::UnboundedReceiver<crate::twitch::InvestmentAction>,
+    mut receive_from_hotkey: tokio::sync::mpsc::UnboundedReceiver<Option<i32>>,
 ) {
     let regular_font = load_ttf_font("./data/fonts/Roboto-Regular.ttf")
         .await
         .unwrap();
+    let bold_font = load_ttf_font("./data/fonts/Roboto-Bold.ttf").await.unwrap();
     let mut value: i32 = settings.game.initial_price;
     let mut buys: HashMap<uuid::Uuid, ActionText> = HashMap::new();
     let mut sells: HashMap<uuid::Uuid, ActionText> = HashMap::new();
@@ -54,12 +63,27 @@ async fn run(
                 value: action.value,
                 start_time: std::time::Instant::now(),
                 x_pos: ::rand::rng().random_range(20.0..=box_size.0 - 40.0),
+                special: false,
             };
             if action.is_buy {
                 buys.insert(uuid::Uuid::new_v4(), action_text);
             } else {
                 sells.insert(uuid::Uuid::new_v4(), action_text);
             }
+        }
+        if let Ok(race_state_change) = receive_from_hotkey.try_recv() {
+            match race_state_change {
+                Some(val) => {
+                    let action_text = ActionText {
+                        value: val,
+                        start_time: std::time::Instant::now(),
+                        x_pos: (box_size.0 * 0.5) - 50.0,
+                        special: true,
+                    };
+                    sells.insert(uuid::Uuid::new_v4(), action_text);
+                }
+                None => {} // TODO: race started: behavior TBD
+            };
         }
         clear_background(Color {
             r: 0.0,
@@ -123,23 +147,55 @@ async fn run(
             let time = sell.start_time.elapsed().as_millis();
             let end_time = settings.window.float_time;
             let time_through = time as f32 / end_time as f32;
+            let color = if sell.special {
+                Color {
+                    r: 1.0,
+                    g: 1.0,
+                    b: 0.0,
+                    a: 1.0,
+                }
+            } else if sell.value < 0 {
+                Color {
+                    r: 1.0,
+                    g: 0.0,
+                    b: 0.0,
+                    a: 1.0,
+                }
+            } else {
+                Color {
+                    r: 0.0,
+                    g: 1.0,
+                    b: 0.0,
+                    a: 1.0,
+                }
+            };
             draw_text_ex(
                 &format!(
                     "{}${}",
-                    if sell.value < 0 { "-" } else { "+" },
+                    if sell.special {
+                        ""
+                    } else if sell.value < 0 {
+                        "-"
+                    } else {
+                        "+"
+                    },
                     sell.value.abs()
                 ),
                 sell.x_pos,
                 (box_top - 20.0) - (100.0 * time_through),
                 TextParams {
-                    font_size: 40,
+                    font_size: if sell.special { 100 } else { 40 },
                     color: Color {
-                        r: if sell.value < 0 { 1.0 } else { 0.0 },
-                        g: if sell.value < 0 { 0.0 } else { 1.0 },
-                        b: 0.0,
+                        r: color.r,
+                        g: color.g,
+                        b: color.b,
                         a: 1.0 - time_through,
                     },
-                    font: Some(&regular_font),
+                    font: if sell.special {
+                        Some(&bold_font)
+                    } else {
+                        Some(&regular_font)
+                    },
                     ..Default::default()
                 },
             );
