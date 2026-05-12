@@ -5,6 +5,7 @@ pub fn init(settings: &crate::settings::Settings) -> llamacpp_embed::LlamaEmbedM
         .with_system_prompt("You are an image identifying robot.")
         .with_parallel(2)
         .with_context_size(16384)
+        .with_disable_gpu(settings.llm.disable_gpu)
         .build()
         .unwrap()
 }

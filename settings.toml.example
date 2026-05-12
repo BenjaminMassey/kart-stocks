@@ -13,6 +13,7 @@ cycle_time = 5 # seconds
 port = 8080
 model_path = "./llama-model/model.gguf"
 mmproj_path = "./llama-model/mmproj.gguf"
+disable_gpu = false
 
 [obs]
 ip = "127.0.0.1"

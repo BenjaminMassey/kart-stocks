@@ -25,6 +25,7 @@ pub struct Llm {
     pub port: u64,
     pub model_path: String,
     pub mmproj_path: String,
+    pub disable_gpu: bool,
 }
 
 #[derive(Clone, Deserialize)]
