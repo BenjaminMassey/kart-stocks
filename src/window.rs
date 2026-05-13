@@ -35,6 +35,7 @@ struct ActionText {
     start_time: std::time::Instant,
     x_pos: f32,
     special: bool,
+    is_buy: bool,
 }
 
 async fn run(
@@ -51,8 +52,7 @@ async fn run(
     let mut values: Vec<i32> = vec![];
     let mut racing: bool = false;
     let mut next_is_new: bool = false;
-    let mut buys: HashMap<uuid::Uuid, ActionText> = HashMap::new();
-    let mut sells: HashMap<uuid::Uuid, ActionText> = HashMap::new();
+    let mut actions: HashMap<uuid::Uuid, ActionText> = HashMap::new();
 
     let box_size = (
         settings.window.width as f32,
@@ -77,12 +77,9 @@ async fn run(
                 start_time: std::time::Instant::now(),
                 x_pos: ::rand::rng().random_range(20.0..=box_size.0 - 40.0),
                 special: false,
+                is_buy: action.is_buy,
             };
-            if action.is_buy {
-                buys.insert(uuid::Uuid::new_v4(), action_text);
-            } else {
-                sells.insert(uuid::Uuid::new_v4(), action_text);
-            }
+            actions.insert(uuid::Uuid::new_v4(), action_text);
         }
         if let Ok(race_state_change) = receive_from_hotkey.try_recv() {
             match race_state_change {
@@ -92,8 +89,9 @@ async fn run(
                         start_time: std::time::Instant::now(),
                         x_pos: (box_size.0 * 0.5) - 50.0,
                         special: true,
+                        is_buy: false,
                     };
-                    sells.insert(uuid::Uuid::new_v4(), action_text);
+                    actions.insert(uuid::Uuid::new_v4(), action_text);
                     racing = false;
                 }
                 None => {
@@ -102,9 +100,18 @@ async fn run(
                 }
             };
         }
+
         clear_background(GRAY);
 
-        draw_rectangle(0.0, box_top, box_size.0, box_size.1, DARKGRAY);
+        border(
+            (0.0, 0.0),
+            (
+                settings.window.width as f32,
+                settings.window.height as f32 * 0.5,
+            ),
+            settings.window.border,
+            DARKGRAY,
+        );
 
         let graph_space = settings.window.border * 2.0;
         line_graph(
@@ -114,6 +121,16 @@ async fn run(
                 (settings.window.height as f32 * 0.5) - (graph_space * 2.0),
             ),
             &values,
+        );
+
+        border(
+            (0.0, box_top - settings.window.border),
+            (
+                settings.window.width as f32,
+                (settings.window.height as f32 * 0.5) - (settings.window.border * 1.5),
+            ),
+            settings.window.border,
+            DARKGRAY,
         );
 
         draw_text_ex(
@@ -128,102 +145,29 @@ async fn run(
             },
         );
 
-        let mut buys_to_delete: Vec<uuid::Uuid> = vec![];
-        for (id, buy) in &buys {
-            let time = buy.start_time.elapsed().as_millis();
-            let end_time = settings.window.float_time;
-            let time_through = time as f32 / end_time as f32;
-            draw_text_ex(
-                &format!("${}", buy.value),
-                buy.x_pos,
-                (box_top - 20.0) - (100.0 * time_through),
-                TextParams {
-                    font_size: 40,
-                    color: Color {
-                        r: 1.0,
-                        g: 1.0,
-                        b: 1.0,
-                        a: 1.0 - time_through,
-                    },
-                    font: Some(&regular_font),
-                    ..Default::default()
-                },
-            );
-            if time >= end_time {
-                buys_to_delete.push(*id);
-            }
-        }
-        for id in &buys_to_delete {
-            buys.remove(id);
-        }
-
-        let mut sells_to_delete: Vec<uuid::Uuid> = vec![];
-        for (id, sell) in &sells {
-            let time = sell.start_time.elapsed().as_millis();
-            let end_time = settings.window.float_time;
-            let time_through = time as f32 / end_time as f32;
-            let color = if sell.special {
-                Color {
-                    r: 1.0,
-                    g: 1.0,
-                    b: 0.0,
-                    a: 1.0,
-                }
-            } else if sell.value < 0 {
-                Color {
-                    r: 1.0,
-                    g: 0.0,
-                    b: 0.0,
-                    a: 1.0,
-                }
-            } else {
-                Color {
-                    r: 0.0,
-                    g: 1.0,
-                    b: 0.0,
-                    a: 1.0,
-                }
-            };
-            draw_text_ex(
-                &format!(
-                    "{}${}",
-                    if sell.special {
-                        ""
-                    } else if sell.value < 0 {
-                        "-"
-                    } else {
-                        "+"
-                    },
-                    sell.value.abs()
-                ),
-                sell.x_pos,
-                (box_top - 20.0) - (100.0 * time_through),
-                TextParams {
-                    font_size: if sell.special { 100 } else { 40 },
-                    color: Color {
-                        r: color.r,
-                        g: color.g,
-                        b: color.b,
-                        a: 1.0 - time_through,
-                    },
-                    font: if sell.special {
-                        Some(&bold_font)
-                    } else {
-                        Some(&regular_font)
-                    },
-                    ..Default::default()
-                },
-            );
-            if time >= end_time {
-                sells_to_delete.push(*id);
-            }
-        }
-        for id in &sells_to_delete {
-            sells.remove(id);
-        }
+        animated_actions(&settings, &mut actions, box_top, &regular_font, &bold_font);
 
         next_frame().await
     }
+}
+
+fn border(position: (f32, f32), size: (f32, f32), thickness: f32, color: Color) {
+    draw_rectangle(position.0, position.1, size.0, thickness, color); // top
+    draw_rectangle(position.0, position.1, thickness, size.1, color); // left
+    draw_rectangle(
+        (position.0 + size.0) - thickness,
+        position.1,
+        thickness,
+        size.1,
+        color,
+    ); // right
+    draw_rectangle(
+        position.0,
+        (position.1 + size.1) - thickness,
+        size.0,
+        thickness,
+        color,
+    ); // bottom
 }
 
 fn line_graph(position: (f32, f32), size: (f32, f32), values: &[i32]) {
@@ -262,5 +206,51 @@ fn line_graph(position: (f32, f32), size: (f32, f32), values: &[i32]) {
     }
     for point in &points {
         draw_circle(point.0, point.1, 4.5, WHITE);
+    }
+}
+
+fn animated_actions(
+    settings: &crate::settings::Settings,
+    actions: &mut HashMap<uuid::Uuid, ActionText>,
+    box_top: f32,
+    regular_font: &Font,
+    bold_font: &Font,
+) {
+    let mut actions_to_delete: Vec<uuid::Uuid> = vec![];
+    for (id, action) in actions.iter() {
+        let (prefix, font_size, color, font) = if action.is_buy {
+            ("", 40, WHITE, regular_font)
+        } else if action.special {
+            ("", 100, YELLOW, bold_font)
+        } else if action.value < 0 {
+            ("-", 40, RED, regular_font)
+        } else {
+            ("+", 40, GREEN, regular_font)
+        };
+        let time = action.start_time.elapsed().as_millis();
+        let end_time = settings.window.float_time;
+        let time_through = time as f32 / end_time as f32;
+        draw_text_ex(
+            &format!("{}${}", prefix, action.value.abs()),
+            action.x_pos,
+            (box_top - 20.0) - (100.0 * time_through),
+            TextParams {
+                font_size: font_size,
+                color: Color {
+                    r: color.r,
+                    g: color.g,
+                    b: color.b,
+                    a: 1.0 - time_through,
+                },
+                font: Some(font),
+                ..Default::default()
+            },
+        );
+        if time >= end_time {
+            actions_to_delete.push(*id);
+        }
+    }
+    for id in &actions_to_delete {
+        actions.remove(id);
     }
 }
