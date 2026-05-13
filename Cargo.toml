@@ -7,12 +7,12 @@ edition = "2021"
 base64 = "0.22.1"
 image = "0.25.10"
 img_hash = "3.2.0"
-tokio = { version = "1.45.1", features = [ "rt", "rt-multi-thread" ] }
+tokio = { version = "1.45.1", features = [ "rt", "rt-multi-thread", "sync" ] }
 twitch-irc = "5.0.1"
 obws = "0.15.0"
 ocrs = "0.10.3"
 prompted = "0.2.8"
-rten = "0.18.0"
+rten = "0.21.0"
 uuid = { version = "1.23.1", features = [ "v4" ] }
 llamacpp_embed = { git = "https://www.github.com/BenjaminMassey/llamacpp_embed" }
 phf = { version = "0.13.1", features = [ "macros" ] }

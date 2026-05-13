@@ -36,6 +36,6 @@ coins_weight = 0.05
 [window]
 title = "Kart Stocks"
 width = 600
-height = 600
+height = 500
 border = 10.0
 float_time = 3000 # milliseconds

@@ -48,15 +48,28 @@ async fn run(
         .unwrap();
     let bold_font = load_ttf_font("./data/fonts/Roboto-Bold.ttf").await.unwrap();
     let mut value: i32 = settings.game.initial_price;
+    let mut values: Vec<i32> = vec![];
+    let mut racing: bool = false;
+    let mut next_is_new: bool = false;
     let mut buys: HashMap<uuid::Uuid, ActionText> = HashMap::new();
     let mut sells: HashMap<uuid::Uuid, ActionText> = HashMap::new();
 
-    let box_size = (settings.window.width as f32, 250.0);
+    let box_size = (
+        settings.window.width as f32,
+        settings.window.height as f32 * 0.5,
+    );
     let box_top = settings.window.height as f32 - box_size.1;
 
     loop {
         if let Ok(val) = receive_from_run.try_recv() {
             value = val;
+            if next_is_new {
+                values.clear();
+                next_is_new = false;
+            }
+            if racing {
+                values.push(val);
+            }
         }
         if let Ok(action) = receive_from_twitch.try_recv() {
             let action_text = ActionText {
@@ -81,24 +94,26 @@ async fn run(
                         special: true,
                     };
                     sells.insert(uuid::Uuid::new_v4(), action_text);
+                    racing = false;
                 }
-                None => {} // TODO: race started: behavior TBD
+                None => {
+                    next_is_new = true;
+                    racing = true;
+                }
             };
         }
-        clear_background(Color {
-            r: 0.0,
-            g: 0.0,
-            b: 1.0,
-            a: 1.0,
-        });
+        clear_background(GRAY);
 
         draw_rectangle(0.0, box_top, box_size.0, box_size.1, DARKGRAY);
-        draw_rectangle(
-            settings.window.border,
-            box_top + settings.window.border,
-            box_size.0 - (settings.window.border * 2.0),
-            box_size.1 - (settings.window.border * 4.5),
-            GRAY,
+
+        let graph_space = settings.window.border * 2.0;
+        line_graph(
+            (graph_space, graph_space),
+            (
+                settings.window.width as f32 - (graph_space * 2.0),
+                (settings.window.height as f32 * 0.5) - (graph_space * 2.0),
+            ),
+            &values,
         );
 
         draw_text_ex(
@@ -208,5 +223,44 @@ async fn run(
         }
 
         next_frame().await
+    }
+}
+
+fn line_graph(position: (f32, f32), size: (f32, f32), values: &[i32]) {
+    if values.is_empty() {
+        return;
+    }
+    let min_value = *values.iter().min().unwrap() as f32;
+    let max_value = *values.iter().max().unwrap() as f32;
+    let range = max_value - min_value;
+    let mut points: Vec<(f32, f32)> = vec![];
+    for i in 0..values.len() {
+        let x: f32 = ((i as f32 / (values.len() - 1) as f32) * size.0) + position.0;
+        let norm = if range > 0.0 {
+            (values[i] as f32 - min_value) as f32 / range
+        } else {
+            0.5
+        };
+        let y: f32 = ((1.0 - norm) * size.1) + position.1;
+        points.push((x, y));
+    }
+    for i in 0..(points.len() - 1) {
+        draw_line(
+            points[i].0,
+            points[i].1,
+            points[i + 1].0,
+            points[i + 1].1,
+            3.0,
+            if points[i].1 > points[i + 1].1 {
+                GREEN
+            } else if points[i].1 < points[i + 1].1 {
+                RED
+            } else {
+                WHITE
+            },
+        );
+    }
+    for point in &points {
+        draw_circle(point.0, point.1, 4.5, WHITE);
     }
 }
