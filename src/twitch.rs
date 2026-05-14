@@ -33,7 +33,7 @@ pub async fn run(
         while let Some(hotkey_msg) = receive_from_hotkey.recv().await {
             println!("Hotkey bot trigger: \"{}\".", &hotkey_msg);
             if let Err(e) = client_for_mpsc
-                .say(settings_for_mpsc.twitch.bot_channel.clone(), hotkey_msg)
+                .say(settings_for_mpsc.twitch.racer_channel.clone(), hotkey_msg)
                 .await
             {
                 eprintln!("twitch client.say() error: {:?}", e);
