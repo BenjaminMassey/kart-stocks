@@ -27,3 +27,11 @@ You will need to create an account for your kart_stocks bot on Twitch, if you ha
 ## Settings
 
 You will need settings specific to your own account and setup, so copy `settings.toml.example` in the repo as simply `settings.toml` and edit it such that any empty values are given the appropriate fields.
+
+# License
+
+This project is licensed under the [GNU General Public License (GPLv3)](https://www.gnu.org/licenses/gpl-3.0.en.html).
+
+A copy of said license can be found in `LICENSE.md`.
+
+# Copyright 2026 Benjamin Massey
