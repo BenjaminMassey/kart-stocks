@@ -17,7 +17,7 @@ const RESOLUTION: (f32, f32) = (1280.0, 720.0);
 fn main() {
     println!("Starting kart-stocks...");
     let settings = settings::get_settings();
-    portfolio::init(&settings).unwrap();
+    let db_conn = portfolio::init(&settings).unwrap();
     let ocr_engine = ocr::init();
     let mut llm_model = llm::init(&settings);
     let llm_placement_data = llm::get_placement_data();
@@ -63,7 +63,7 @@ fn main() {
         key_code: livesplit_hotkey::KeyCode::KeyK,
         modifiers: livesplit_hotkey::Modifiers::CONTROL | livesplit_hotkey::Modifiers::ALT,
     };
-    let settings_for_hotkey = settings.clone();
+    let db_conn_for_hotkey = Arc::clone(&db_conn);
     let state_for_hotkey = Arc::clone(&state);
     hotkey_hook
         .register(hotkey, move || {
@@ -83,7 +83,7 @@ fn main() {
                 send_message_to_twitch
                     .send(format!("Selling to all investors at ${}.", value))
                     .expect("Error sending from hotkey to twitch.");
-                if let Err(e) = portfolio::sell_all(&settings_for_hotkey.clone(), value) {
+                if let Err(e) = portfolio::sell_all(&db_conn_for_hotkey, value) {
                     eprintln!("{:?}", e);
                 }
                 send_racing_to_window
@@ -96,6 +96,7 @@ fn main() {
     twitch::run(
         &settings.clone(),
         Arc::clone(&state),
+        Arc::clone(&db_conn),
         receive_message_from_hotkey,
         &twitch_token,
         send_actions_to_window,

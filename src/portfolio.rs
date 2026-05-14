@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 pub struct ShareholderInfo {
     pub username: String,
     pub money: i32,
@@ -5,7 +7,9 @@ pub struct ShareholderInfo {
     pub price: i32,
 }
 
-pub fn init(settings: &crate::settings::Settings) -> Result<(), Box<dyn std::error::Error>> {
+pub fn init(
+    settings: &crate::settings::Settings,
+) -> Result<Arc<Mutex<rusqlite::Connection>>, Box<dyn std::error::Error>> {
     let conn = rusqlite::Connection::open(&settings.game.database_path)?;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS shareholders (
@@ -15,15 +19,16 @@ pub fn init(settings: &crate::settings::Settings) -> Result<(), Box<dyn std::err
              price INTEGER)",
         [],
     )?;
-    Ok(())
+    Ok(Arc::new(Mutex::new(conn)))
 }
 
 pub fn add_shareholder(
+    conn: &Arc<Mutex<rusqlite::Connection>>,
     settings: &crate::settings::Settings,
     username: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut conn = rusqlite::Connection::open(&settings.game.database_path)?;
-    let existing_count: i32 = conn.query_row(
+    let mut db = conn.lock().unwrap();
+    let existing_count: i32 = db.query_row(
         "SELECT COUNT(*) FROM shareholders WHERE username = ?1",
         [username],
         |row| row.get(0),
@@ -31,7 +36,7 @@ pub fn add_shareholder(
     if existing_count > 0 {
         return Err(format!("@{}: you have already joined.", username).into());
     }
-    let tx = conn.transaction()?;
+    let tx = db.transaction()?;
     tx.execute(
         "INSERT INTO shareholders (username, money, invested, price) VALUES (?1, ?2, 0, 0)",
         [username, &settings.game.starting_money.to_string()],
@@ -41,11 +46,11 @@ pub fn add_shareholder(
 }
 
 pub fn get_shareholder(
-    settings: &crate::settings::Settings,
+    conn: &Arc<Mutex<rusqlite::Connection>>,
     username: &str,
 ) -> Result<ShareholderInfo, Box<dyn std::error::Error>> {
-    let conn = rusqlite::Connection::open(&settings.game.database_path)?;
-    let mut stmt = conn
+    let db = conn.lock().unwrap();
+    let mut stmt = db
         .prepare("SELECT * FROM shareholders WHERE username = ?1")
         .unwrap();
     let mut rows = stmt.query([username])?;
@@ -62,12 +67,12 @@ pub fn get_shareholder(
 }
 
 pub fn invest(
-    settings: &crate::settings::Settings,
+    conn: &Arc<Mutex<rusqlite::Connection>>,
     username: &str,
     value: i32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut conn = rusqlite::Connection::open(&settings.game.database_path)?;
-    if conn
+    let mut db = conn.lock().unwrap();
+    if db
         .query_row(
             "SELECT * FROM shareholders WHERE username = ?1",
             [username],
@@ -77,7 +82,7 @@ pub fn invest(
     {
         return Err(format!("@{} has not done !join yet.", username).into());
     }
-    let (money, invested): (i32, i32) = conn.query_row(
+    let (money, invested): (i32, i32) = db.query_row(
         "SELECT money, invested FROM shareholders WHERE username = ?1",
         [username],
         |row| Ok((row.get::<usize, i32>(0)?, row.get::<usize, i32>(1)?)),
@@ -88,7 +93,7 @@ pub fn invest(
     if money < value {
         return Err(format!("@{}: you cannot afford to buy.", username).into());
     }
-    let tx = conn.transaction()?;
+    let tx = db.transaction()?;
     tx.execute(
         "UPDATE shareholders SET money = money - ?1, invested = 1, price = ?2 WHERE username = ?3",
         [&value.to_string(), &value.to_string(), username],
@@ -99,12 +104,12 @@ pub fn invest(
 }
 
 pub fn sell(
-    settings: &crate::settings::Settings,
+    conn: &Arc<Mutex<rusqlite::Connection>>,
     username: &str,
     value: i32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut conn = rusqlite::Connection::open(&settings.game.database_path)?;
-    if conn
+    let mut db = conn.lock().unwrap();
+    if db
         .query_row(
             "SELECT * FROM shareholders WHERE username = ?1",
             [username],
@@ -114,7 +119,7 @@ pub fn sell(
     {
         return Err(format!("@{} has not done !join yet.", username).into());
     }
-    let invested: i32 = conn.query_row(
+    let invested: i32 = db.query_row(
         "SELECT invested FROM shareholders WHERE username = ?1",
         [username],
         |row| Ok(row.get::<usize, i32>(0)?),
@@ -122,7 +127,7 @@ pub fn sell(
     if invested == 0 {
         return Err(format!("@{} cannot sell because you are not invested.", username).into());
     }
-    let tx = conn.transaction()?;
+    let tx = db.transaction()?;
     tx.execute(
         "UPDATE shareholders SET money = money + ?1, invested = 0 WHERE username = ?2",
         [&value.to_string(), username],
@@ -133,11 +138,11 @@ pub fn sell(
 }
 
 pub fn sell_all(
-    settings: &crate::settings::Settings,
+    conn: &Arc<Mutex<rusqlite::Connection>>,
     value: i32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut conn = rusqlite::Connection::open(&settings.game.database_path)?;
-    let tx = conn.transaction()?;
+    let mut db = conn.lock().unwrap();
+    let tx = db.transaction()?;
     tx.execute(
         "UPDATE shareholders SET money = money + ?1, invested = 0 WHERE invested = 1",
         [value],
