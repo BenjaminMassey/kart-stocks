@@ -63,6 +63,35 @@ pub fn item_prompt() -> String {
     )
 }
 
+pub fn prep_training_data(model: &mut llamacpp_embed::LlamaEmbedModel) {
+    let _ = identify(
+        model,
+        &crate::llm::placement_prompt(),
+        &crate::extract::image_to_bytes(
+            &image::ImageReader::open("./data/images/places/1.png")
+                .unwrap()
+                .decode()
+                .unwrap()
+                .to_rgb8(),
+        ),
+        &get_placement_data(),
+        crate::data::PLACEMENT_SLOT,
+    );
+    let _ = identify(
+        model,
+        &crate::llm::item_prompt(),
+        &crate::extract::image_to_bytes(
+            &image::ImageReader::open("./data/images/items/mushroom.png")
+                .unwrap()
+                .decode()
+                .unwrap()
+                .to_rgb8(),
+        ),
+        &get_item_data(),
+        crate::data::ITEMS_SLOT,
+    );
+}
+
 pub fn identify(
     model: &mut llamacpp_embed::LlamaEmbedModel,
     prompt: &str,

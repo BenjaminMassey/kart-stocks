@@ -1,6 +1,6 @@
 use image::{GenericImage, ImageFormat};
 
-fn image_to_bytes(frame: &image::ImageBuffer<image::Rgb<u8>, Vec<u8>>) -> Vec<u8> {
+pub fn image_to_bytes(frame: &image::ImageBuffer<image::Rgb<u8>, Vec<u8>>) -> Vec<u8> {
     let mut bytes = Vec::new();
     let _ = frame
         .write_to(&mut std::io::Cursor::new(&mut bytes), ImageFormat::Jpeg)

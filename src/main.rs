@@ -22,6 +22,7 @@ fn main() {
     let mut llm_model = llm::init(&settings);
     let llm_placement_data = llm::get_placement_data();
     let llm_item_data = llm::get_item_data();
+    llm::prep_training_data(&mut llm_model);
     println!("\nFinished initializing!\n\nPlease choose your OBS source.\n");
     let obws_source = obs::choose_obs_source(&settings);
     let twitch_token = twitch_auth::fetch_token(&settings);
