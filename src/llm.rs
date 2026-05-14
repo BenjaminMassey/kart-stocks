@@ -16,7 +16,7 @@ pub fn get_placement_data() -> Vec<llamacpp_embed::VisionMessage> {
 
 pub fn get_item_data() -> Vec<llamacpp_embed::VisionMessage> {
     get_training_data("./data/images/items/", &item_prompt())
-} // TODO: missing some items
+}
 
 fn get_training_data(dir: &str, prompt: &str) -> Vec<llamacpp_embed::VisionMessage> {
     let mut data: Vec<llamacpp_embed::VisionMessage> = vec![];
