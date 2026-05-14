@@ -6,6 +6,8 @@ use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
 
+const INFORMATION_COOLDOWN: u64 = 15;
+
 pub struct InvestmentAction {
     pub is_buy: bool, // as opposed to a sell
     pub value: i32,
@@ -41,6 +43,10 @@ pub async fn run(
         }
     });
 
+    let mut last_info =
+        std::time::Instant::now() - std::time::Duration::from_secs(INFORMATION_COOLDOWN);
+    let mut last_commands =
+        std::time::Instant::now() - std::time::Duration::from_secs(INFORMATION_COOLDOWN);
     let settings_for_chat = settings.clone();
     let state_for_chat = Arc::clone(&state);
     let client_for_chat = client.clone();
@@ -59,6 +65,8 @@ pub async fn run(
                         db_conn_for_chat.clone(),
                         msg,
                         send_to_window.clone(),
+                        &mut last_info,
+                        &mut last_commands,
                     ) {
                         println!("Bot response: \"{}\".", &response);
                         if let Err(e) = client_for_chat
@@ -98,10 +106,13 @@ fn game_interactions(
     db_conn: Arc<Mutex<rusqlite::Connection>>,
     msg: PrivmsgMessage,
     send_to_window: tokio::sync::mpsc::UnboundedSender<InvestmentAction>,
+    last_info: &mut std::time::Instant,
+    last_commands: &mut std::time::Instant,
 ) -> Option<String> {
-    if msg.message_text.to_lowercase() == "!value" {
+    let message = msg.message_text.to_lowercase().trim().to_owned();
+    if &message == "!value" {
         return Some(format!("Current value: {}", state.lock().unwrap().value,));
-    } else if msg.message_text.to_lowercase() == "!join" {
+    } else if &message == "!join" {
         match crate::portfolio::add_shareholder(&db_conn, settings, &msg.sender.name) {
             Ok(_) => {
                 return Some(format!(
@@ -113,7 +124,7 @@ fn game_interactions(
                 eprintln!("{:?}", e);
             }
         }
-    } else if msg.message_text.to_lowercase() == "!money" {
+    } else if &message == "!money" {
         match crate::portfolio::get_shareholder(&db_conn, &msg.sender.name) {
             Ok(shareholder) => {
                 return Some(if shareholder.invested {
@@ -132,7 +143,7 @@ fn game_interactions(
                 eprintln!("{:?}", e);
             }
         }
-    } else if msg.message_text.to_lowercase() == "!buy" {
+    } else if &message == "!buy" {
         let current_value = state.lock().unwrap().value;
         match crate::portfolio::invest(&db_conn, &msg.sender.name, current_value) {
             Ok(_) => {
@@ -151,7 +162,7 @@ fn game_interactions(
                 eprintln!("{:?}", e);
             }
         }
-    } else if msg.message_text.to_lowercase() == "!sell" {
+    } else if &message == "!sell" {
         let current_value = state.lock().unwrap().value;
         match crate::portfolio::sell(&db_conn, &msg.sender.name, current_value) {
             Ok(_) => {
@@ -174,6 +185,34 @@ fn game_interactions(
                 eprintln!("{:?}", e);
             }
         }
+    } else if &message == "!info" && last_info.elapsed().as_secs() > INFORMATION_COOLDOWN {
+        *last_info = std::time::Instant::now();
+        return Some(
+            "Kart Stocks is an interactive stock-trading game with \
+            live Mario Kart World gameplay. After chatting !join, you will \
+            have some !money to work with. Then you can !buy a share of the \
+            current race for the current !value (also on screen) and !sell \
+            it later. The value is determined by how good the run is: \
+            screenshots are analyzed to determine placement, items, and coin \
+            count, which is fed into an equation for a single cost value. Buy \
+            low, sell high, and good luck!"
+                .to_owned(),
+        );
+    } else if &message == "!commands" && last_commands.elapsed().as_secs() > INFORMATION_COOLDOWN {
+        *last_commands = std::time::Instant::now();
+        return Some(
+            "!join: receive your initial money ; \
+            !buy: purchase a share at current cost ; \
+            !sell: exchange share for current value ; \
+            !money: check your current captial potential ; \
+            !value: check the current investment cost ; \
+            !info: brief overview of game ; \
+            !github: code repository link ; \
+            !commands: this!"
+                .to_owned(),
+        );
+    } else if &message == "!github" {
+        return Some("https://github.com/BenjaminMassey/kart-stocks".to_owned());
     }
     None
 }
