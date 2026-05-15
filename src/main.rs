@@ -12,8 +12,6 @@ mod window;
 
 use std::sync::{Arc, Mutex};
 
-const RESOLUTION: (f32, f32) = (1280.0, 720.0);
-
 fn main() {
     println!("Starting kart-stocks...");
     let settings = settings::get_settings();

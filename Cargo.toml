@@ -2,6 +2,7 @@
 name = "kart-stocks"
 version = "0.1.0"
 edition = "2021"
+default-run = "kart-stocks"
 
 [dependencies]
 base64 = "0.22.1"

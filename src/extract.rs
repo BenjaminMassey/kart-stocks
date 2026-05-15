@@ -15,10 +15,10 @@ pub fn get_placement(
 ) -> Option<u32> {
     let place_frame = frame
         .sub_image(
-            (0.8368f32 * (crate::RESOLUTION.0 as f32)) as u32,
-            (0.7791f32 * (crate::RESOLUTION.1 as f32)) as u32,
-            (0.1289f32 * (crate::RESOLUTION.0 as f32)) as u32,
-            (0.1944f32 * (crate::RESOLUTION.1 as f32)) as u32,
+            (0.8368f32 * (crate::data::RESOLUTION.0 as f32)) as u32,
+            (0.7791f32 * (crate::data::RESOLUTION.1 as f32)) as u32,
+            (0.1289f32 * (crate::data::RESOLUTION.0 as f32)) as u32,
+            (0.1944f32 * (crate::data::RESOLUTION.1 as f32)) as u32,
         )
         .to_image();
     //let _ = place_frame.save(&format!("test_place.png"));
@@ -39,10 +39,10 @@ pub fn get_first_item(
 ) -> String {
     let first_item_frame = frame
         .sub_image(
-            (0.0906f32 * (crate::RESOLUTION.0 as f32)) as u32,
-            (0.0458f32 * (crate::RESOLUTION.1 as f32)) as u32,
-            (0.0977f32 * (crate::RESOLUTION.0 as f32)) as u32,
-            (0.1708f32 * (crate::RESOLUTION.1 as f32)) as u32,
+            (0.0906f32 * (crate::data::RESOLUTION.0 as f32)) as u32,
+            (0.0458f32 * (crate::data::RESOLUTION.1 as f32)) as u32,
+            (0.0977f32 * (crate::data::RESOLUTION.0 as f32)) as u32,
+            (0.1708f32 * (crate::data::RESOLUTION.1 as f32)) as u32,
         )
         .to_image();
     //let _ = first_item_frame.save(&format!("test_first.png"));
@@ -62,10 +62,10 @@ pub fn get_second_item(
 ) -> String {
     let second_item_frame = frame
         .sub_image(
-            (0.0273f32 * (crate::RESOLUTION.0 as f32)) as u32,
-            (0.0472f32 * (crate::RESOLUTION.1 as f32)) as u32,
-            (0.0540f32 * (crate::RESOLUTION.0 as f32)) as u32,
-            (0.0958f32 * (crate::RESOLUTION.1 as f32)) as u32,
+            (0.0273f32 * (crate::data::RESOLUTION.0 as f32)) as u32,
+            (0.0472f32 * (crate::data::RESOLUTION.1 as f32)) as u32,
+            (0.0540f32 * (crate::data::RESOLUTION.0 as f32)) as u32,
+            (0.0958f32 * (crate::data::RESOLUTION.1 as f32)) as u32,
         )
         .to_image();
     //let _ = second_item_frame.save(&format!("test_second.png"));
@@ -84,10 +84,10 @@ pub fn get_coin_count(
 ) -> Option<u32> {
     let coin_frame = frame
         .sub_image(
-            (0.0601f32 * (crate::RESOLUTION.0 as f32)) as u32,
-            (0.9028f32 * (crate::RESOLUTION.1 as f32)) as u32,
-            (0.0414f32 * (crate::RESOLUTION.0 as f32)) as u32,
-            (0.0514f32 * (crate::RESOLUTION.1 as f32)) as u32,
+            (0.0601f32 * (crate::data::RESOLUTION.0 as f32)) as u32,
+            (0.9028f32 * (crate::data::RESOLUTION.1 as f32)) as u32,
+            (0.0414f32 * (crate::data::RESOLUTION.0 as f32)) as u32,
+            (0.0514f32 * (crate::data::RESOLUTION.1 as f32)) as u32,
         )
         .to_image();
     //let _ = coin_frame.save(&format!("test_coin.png"));

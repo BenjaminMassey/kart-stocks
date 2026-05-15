@@ -1,3 +1,5 @@
+pub const RESOLUTION: (f32, f32) = (1280.0, 720.0);
+
 pub const PLACEMENT_SLOT: u64 = 0;
 pub const ITEMS_SLOT: u64 = 1;
 

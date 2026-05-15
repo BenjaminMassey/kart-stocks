@@ -53,8 +53,8 @@ pub fn get_obs_frame(
             .take_screenshot(TakeScreenshot {
                 source: SourceId::Uuid(source),
                 format: "png",
-                width: Some(crate::RESOLUTION.0 as u32),
-                height: Some(crate::RESOLUTION.1 as u32),
+                width: Some(crate::data::RESOLUTION.0 as u32),
+                height: Some(crate::data::RESOLUTION.1 as u32),
                 compression_quality: Some(-1), // -1 = default
             })
             .await
