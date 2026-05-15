@@ -10,6 +10,8 @@ debug_messages = false
 
 [llm]
 cycle_time = 5 # seconds
+client_only = false
+address = "127.0.0.1"
 port = 8080
 model_path = "./llama-model/model.gguf"
 mmproj_path = "./llama-model/mmproj.gguf"

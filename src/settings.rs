@@ -22,6 +22,8 @@ pub struct Twitch {
 #[derive(Clone, Deserialize)]
 pub struct Llm {
     pub cycle_time: i32,
+    pub client_only: bool,
+    pub address: String,
     pub port: u64,
     pub model_path: String,
     pub mmproj_path: String,
