@@ -27,7 +27,7 @@ User data is output to and read from a local SQLITE file: [rusqlite](https://cra
 
 ## OBS Setup
 
-Need to go into OBS, click "Tools" on the top taskbar, click "WebSocket Server Settings", check to enable, then grab the listed password, and place it in `./obws_password.txt`.
+Need to go into OBS, click "Tools" on the top taskbar, click "WebSocket Server Settings", check to enable, then grab the listed password, and place it in your `settings.toml` file under the `[obs]` section in the `password` field.
 
 You will also add the "Kart Stocks" (default name) window. If OBS gets its window decorator, then add a filter of "Crop/Mask" to remove that (increase "Top" value).
 
