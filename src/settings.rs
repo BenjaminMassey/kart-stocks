@@ -17,6 +17,7 @@ pub struct Twitch {
     pub client_secret: String,
     pub redirect_port: u16,
     pub debug_messages: bool,
+    pub browser_open: bool,
 }
 
 #[derive(Clone, Deserialize)]

@@ -7,6 +7,7 @@ client_id = ""
 client_secret = ""
 redirect_port = 3000
 debug_messages = false
+browser_open = true
 
 [llm]
 cycle_time = 5 # seconds

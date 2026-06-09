@@ -42,9 +42,18 @@ pub fn fetch_token(settings: &crate::settings::Settings) -> String {
         &settings.twitch.client_id, &redirect_uri
     );
 
-    println!("Opening browser to authorize the bot...");
-    open::that(&auth_url)
-        .unwrap_or_else(|_| println!("Could not open browser. Visit manually:\n{}\n", auth_url));
+    let opened = if settings.twitch.browser_open {
+        println!("Opening browser to authorize the bot...");
+        open::that(&auth_url)
+    } else {
+        Err(std::io::Error::last_os_error())
+    };
+    if opened.is_err() {
+        println!(
+            "Twitch needs authentication. Visit manually:\n{}\n",
+            auth_url
+        );
+    }
 
     let tcp_uri = format!("127.0.0.1:{}", &settings.twitch.redirect_port);
     let listener = TcpListener::bind(&tcp_uri).unwrap();
