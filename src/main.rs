@@ -64,8 +64,13 @@ fn main() {
     };
     let db_conn_for_hotkey = Arc::clone(&db_conn);
     let state_for_hotkey = Arc::clone(&state);
+    let mut last_hotkey_press = std::time::Instant::now();
     hotkey_hook
         .register(hotkey, move || {
+            if last_hotkey_press.elapsed().as_secs() < settings.window.hotkey_lockout {
+                return;
+            }
+            last_hotkey_press = std::time::Instant::now();
             let mut state = state_for_hotkey.lock().unwrap();
             state.racing = !state.racing;
             println!("{}ed racing!", if state.racing { "Start" } else { "Stopp" });

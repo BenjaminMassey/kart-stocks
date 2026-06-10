@@ -42,3 +42,4 @@ width = 600
 height = 500
 border = 10.0
 float_time = 3000 # milliseconds
+hotkey_lockout = 3 # seconds

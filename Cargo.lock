@@ -1568,7 +1568,7 @@ dependencies = [
 [[package]]
 name = "llamacpp_embed"
 version = "0.1.0"
-source = "git+https://www.github.com/BenjaminMassey/llamacpp_embed#87dd2b86112f903879ac63d1a8d728532261e4d7"
+source = "git+https://www.github.com/BenjaminMassey/llamacpp_embed#a2ea6d65e33099fd889314fcf5177eae22a6f471"
 dependencies = [
  "base64 0.22.1",
  "flate2",

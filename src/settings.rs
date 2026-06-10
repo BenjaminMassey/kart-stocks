@@ -59,6 +59,7 @@ pub struct Window {
     pub height: i32,
     pub border: f32,
     pub float_time: u128,
+    pub hotkey_lockout: u64,
 }
 
 pub fn get_settings() -> Settings {
