@@ -62,26 +62,28 @@ pub fn get_shareholder(
             price: row.get(3)?,
         })
     } else {
-        Err(format!("@{} has not done !join yet.", username).into())
+        Err(format!("@{} has not joined yet.", username).into())
     }
 }
 
 pub fn invest(
     conn: &Arc<Mutex<rusqlite::Connection>>,
+    settings: &crate::settings::Settings,
     username: &str,
     value: i32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut db = conn.lock().unwrap();
-    if db
-        .query_row(
-            "SELECT * FROM shareholders WHERE username = ?1",
+    let existing_count: i32 = {
+        let db = conn.lock().unwrap();
+        db.query_row(
+            "SELECT COUNT(*) FROM shareholders WHERE username = ?1",
             [username],
-            |_| Ok(()),
-        )
-        .is_err()
-    {
-        return Err(format!("@{} has not done !join yet.", username).into());
+            |row| row.get(0),
+        )?
+    };
+    if existing_count == 0 {
+        add_shareholder(conn, settings, username)?;
     }
+    let mut db = conn.lock().unwrap();
     let (money, invested): (i32, i32) = db.query_row(
         "SELECT money, invested FROM shareholders WHERE username = ?1",
         [username],
@@ -117,7 +119,7 @@ pub fn sell(
         )
         .is_err()
     {
-        return Err(format!("@{} has not done !join yet.", username).into());
+        return Err(format!("@{} has not joined yet.", username).into());
     }
     let invested: i32 = db.query_row(
         "SELECT invested FROM shareholders WHERE username = ?1",

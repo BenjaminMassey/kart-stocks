@@ -112,18 +112,6 @@ fn game_interactions(
     let message = msg.message_text.to_lowercase().trim().to_owned();
     if &message == "!value" {
         return Some(format!("Current value: {}", state.lock().unwrap().value,));
-    } else if &message == "!join" {
-        match crate::portfolio::add_shareholder(&db_conn, settings, &msg.sender.name) {
-            Ok(_) => {
-                return Some(format!(
-                    "Welcome to the stock market, @{}!",
-                    msg.sender.name
-                ));
-            }
-            Err(e) => {
-                eprintln!("{:?}", e);
-            }
-        }
     } else if &message == "!money" {
         match crate::portfolio::get_shareholder(&db_conn, &msg.sender.name) {
             Ok(shareholder) => {
@@ -145,7 +133,7 @@ fn game_interactions(
         }
     } else if &message == "!buy" {
         let current_value = state.lock().unwrap().value;
-        match crate::portfolio::invest(&db_conn, &msg.sender.name, current_value) {
+        match crate::portfolio::invest(&db_conn, settings, &msg.sender.name, current_value) {
             Ok(_) => {
                 send_to_window
                     .send(InvestmentAction {
@@ -189,8 +177,7 @@ fn game_interactions(
         *last_info = std::time::Instant::now();
         return Some(
             "Kart Stocks is an interactive stock-trading game with \
-            live Mario Kart World gameplay. After chatting !join, you will \
-            have some !money to work with. Then you can !buy a share of the \
+            live Mario Kart World gameplay. Just !buy a share of the \
             current race for the current !value (also on screen) and !sell \
             it later. The value is determined by how good the run is: \
             screenshots are analyzed to determine placement, items, and coin \
@@ -200,15 +187,14 @@ fn game_interactions(
         );
     } else if &message == "!commands" && last_commands.elapsed().as_secs() > INFORMATION_COOLDOWN {
         *last_commands = std::time::Instant::now();
-        return Some(
-            "!join: receive your initial money ; \
-            !buy: purchase a share at current cost ; \
-            !sell: exchange share for current value ; \
-            !money: check your current captial potential ; \
-            !value: check the current investment cost ; \
-            !info: brief overview of game ; \
-            !github: code repository link ; \
-            !commands: this!"
+      return Some(
+             "!buy: purchase a share at current cost ; \
+             !sell: exchange share for current value ; \
+             !money: check your current captial potential ; \
+             !value: check the current investment cost ; \
+             !info: brief overview of game ; \
+             !github: code repository link ; \
+             !commands: this!"
                 .to_owned(),
         );
     } else if &message == "!github" {
